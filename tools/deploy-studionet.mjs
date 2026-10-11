@@ -8,7 +8,13 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { chainPreflight, hashes } from './preflight.mjs';
 
-const cli = resolve('node_modules/.bin/genlayer');
+// npm installs the repository-local CLI as a POSIX shim plus a Windows .cmd
+// launcher. Node's spawnSync does not resolve the latter when given the bare
+// shim path, so select the platform launcher explicitly and never fall back
+// to a globally installed CLI.
+const cli = resolve(process.platform === 'win32'
+  ? 'node_modules/.bin/genlayer.cmd'
+  : 'node_modules/.bin/genlayer');
 const journal='receipt-deployment.state.json';
 const safe = s=>s.replace(/\x1b\[[0-9;]*m/g,'');
 const readJson=p=>existsSync(p)?JSON.parse(readFileSync(p,'utf8')):{};
