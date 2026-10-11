@@ -42,6 +42,15 @@ there were zero `Commit challenge` buttons. No wallet connection and no write
 transaction was attempted. This verifies that the production UI preserves
 inspection of existing cases while withholding new challenger-bond deposits.
 
+After deployment `dpl_Dg9EeSjRibo2h49hpr44jGZ1G5CG`, a second production
+audit waited for all five live case cards before checking the rendered app at
+1440x900 and 390x844. Both returned HTTP 200 with no console or page errors,
+no horizontal overflow, the funding-paused notice, and zero `Commit
+challenge` buttons. An automated WCAG 2A/AA scan found zero violations after
+the contrast fix (21 desktop passes and 22 mobile passes; two non-violation
+items remained incomplete for axe's heuristics). No wallet connection or write
+transaction was attempted.
+
 ## Deployed-source parity
 
 At commit `de3cd57cf3301b2f8dca0e3cec5f9bb539b1b52c`, `npm run source:verify`
