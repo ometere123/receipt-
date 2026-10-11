@@ -34,6 +34,8 @@ const SOURCE_ANCHOR = 'self.credits[recipient] = u256(0)';
 const BAD_ANCHOR = '# EVM child is created after finalization.';
 const RESUME_CASE_ID = Number(process.env.RECEIPT_RESUME_CASE_ID || 0);
 const RESUME_CREATE_TX = process.env.RECEIPT_RESUME_CREATE_TX || '';
+const RESUME_NEGATIVE_ID = Number(process.env.RECEIPT_RESUME_NEGATIVE_ID || 0);
+const RESUME_NEGATIVE_CREATE_TX = process.env.RECEIPT_RESUME_NEGATIVE_CREATE_TX || '';
 
 const priorEvidence = existsSync(EVIDENCE_FILE) ? JSON.parse(readFileSync(EVIDENCE_FILE, 'utf8')) : null;
 if (priorEvidence && priorEvidence.result !== 'BLOCKED') throw new Error(`Refusing to overwrite ${EVIDENCE_FILE}; inspect the prior live run first.`);
@@ -237,7 +239,18 @@ async function main() {
   save();
 
   const priorNegative = evidence.cases.find(item => item.label === 'negative supported claim' && item.final_attempt?.verdict === 'NOT_ESTABLISHED');
-  const negative = priorNegative || await createCase('negative supported claim', sourceDigest, SOURCE_PATH, PROTOCOL_DOC_PATH, PROTOCOL_CLAIM, protocolDocDigest);
+  let negative;
+  if (priorNegative) {
+    negative = priorNegative;
+  } else if (RESUME_NEGATIVE_ID) {
+    if (!RESUME_NEGATIVE_CREATE_TX) throw new Error('RECEIPT_RESUME_NEGATIVE_CREATE_TX is required with RECEIPT_RESUME_NEGATIVE_ID.');
+    const state = await readJSON(readClient, VAULT, 'get_case', [RESUME_NEGATIVE_ID]);
+    if (state.status !== 'OPEN' || state.active_attempt) throw new Error(`Resume negative case ${RESUME_NEGATIVE_ID} is not still open and attempt-free.`);
+    negative = { label: 'negative supported claim', id: RESUME_NEGATIVE_ID, create: { hash: RESUME_NEGATIVE_CREATE_TX }, initial: state, bounty_wei: BOUNTY.toString(), bond_wei: BOND.toString() };
+    evidence.cases.push(negative); save();
+  } else {
+    negative = await createCase('negative supported claim', sourceDigest, SOURCE_PATH, PROTOCOL_DOC_PATH, PROTOCOL_CLAIM, protocolDocDigest);
+  }
   if (!priorNegative) await commitAndReveal(negative, 'negative-supported', 'if gl.message.sender_address != self.engine:',
     'The selected source enforces the published engine-only authorization, so it supports rather than contradicts the claim.');
   if (negative.final_attempt.verdict !== 'NOT_ESTABLISHED' || negative.final_case.status !== 'OPEN') throw new Error(`Negative case did not settle as NOT_ESTABLISHED/OPEN: ${negative.final_attempt.verdict}/${negative.final_case.status}`);
