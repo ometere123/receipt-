@@ -133,9 +133,11 @@ MIT licensed. See `LICENSE`.
 
 ## Adversarial and deployment evidence improvements (pre-deployment)
 
-- 46 deterministic unit checks and 7 exact-stack GenVM Direct Mode cases pass
+- 51 deterministic unit checks and 11 exact-stack GenVM Direct Mode cases pass
   locally. Direct Mode uses the pinned testing-suite and is separate from the
-  unit harness.
+  unit harness; it covers the pinned runner's `Response.status` fetch path,
+  malformed model neutrality, callback authorization, duplicate messages,
+  recovery arbitration and accounting conservation.
 - The frontend passes 13 Vitest checks, typecheck, lint, a production build,
   and 10 Playwright checks against the built app. Browser tests cover the real
   no-deployment state, wallet wrong-chain warning, major surfaces and mobile

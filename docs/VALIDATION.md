@@ -5,12 +5,17 @@ This document is a test specification and evidence ledger, **not** a record clai
 ## Current local evidence
 
 - Exact Python environment: Python 3.12, `genlayer-py 0.18.0`, `genlayer-test 0.29.2`, `genvm-linter 0.11.0`.
-- `pytest -q tests/unit`: 46 passed.
-- `pytest -q tests/direct`: 7 passed in genuine Direct Mode.
+- `pytest -q tests/unit`: 51 passed.
+- `pytest -q tests/direct`: 11 passed in genuine Direct Mode, including a
+  real GenVM `Response.status` source-fetch/adjudication path, malformed-model
+  neutrality, callback authorization, duplicate settlement, recovery
+  confirmation and financial-conservation flows.
 - Fast `genvm-lint lint --json`: both contracts pass all 3 checks.
 - `npm run lint:contracts`: full lint and semantic validation pass for both contracts with `GENVM_VERSION=v0.3.0-rc7`; the output notes that a newer runner exists, but the pinned target is deliberate for the 61999 toolchain.
 - Frontend: typecheck passed, Vitest 13 passed, ESLint passed, `npm audit --omit=dev --audit-level=high` reports 0 high-severity findings, production build passed, and Playwright 10 passed against the built app. The CSS has existing Autoprefixer flex-start/flex-end compatibility warnings.
-- No deployment manifest or deployed addresses exist in this source package; live source parity, child-message lifecycle, consensus, and external GEN payout receipt remain unverified.
+- No deployment manifest or deployed addresses exist in this source package;
+  live source parity, child-message lifecycle, consensus, and external GEN
+  payout receipt remain unverified until a deployment run records them.
 
 ## Checks already implementable offline
 

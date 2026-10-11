@@ -19,6 +19,18 @@ def _clean_reason(value: str) -> str:
     return ' '.join(str(value).split())[:600]
 
 
+def _inconclusive(reason: str) -> dict:
+    """Return the one canonical neutral result shape.
+
+    PromiseVault deliberately requires an empty evidence digest for
+    INCONCLUSIVE. Keeping that normalization here prevents source-fetch and
+    malformed-model branches from disagreeing about whether a digest exists.
+    """
+    return {'verdict': 'INCONCLUSIVE', 'scope_ok': False,
+            'proof_complete': False, 'contradiction': False,
+            'digest': '', 'reason': _clean_reason(reason)}
+
+
 def _key(value: int) -> str:
     return str(int(value))
 
@@ -122,7 +134,7 @@ class ProofEngine(gl.Contract):
             try:
                 doc_response = gl.nondet.web.get(doc_url)
                 source_response = gl.nondet.web.get(src_url)
-                if doc_response.status_code != 200 or source_response.status_code != 200:
+                if doc_response.status != 200 or source_response.status != 200:
                     data = {'status': 'SOURCE_ERROR', 'digest': ''}
                 elif (len(doc_response.body) > 18000 or
                       len(source_response.body) > 20000):
@@ -142,9 +154,7 @@ class ProofEngine(gl.Contract):
             except Exception:
                 data = {'status': 'SOURCE_ERROR', 'digest': ''}
             if data['status'] == 'SOURCE_ERROR':
-                return {'verdict': 'INCONCLUSIVE', 'scope_ok': False,
-                        'proof_complete': False, 'contradiction': False,
-                        'digest': '', 'reason': 'Pinned source unavailable or its digest changed.'}
+                return _inconclusive('Pinned source unavailable or its digest changed.')
             if data['status'] == 'OUT_OF_SCOPE':
                 return {'verdict': 'OUT_OF_SCOPE', 'scope_ok': False,
                         'proof_complete': False, 'contradiction': False,
@@ -165,20 +175,23 @@ contradiction (bool), reason (plain string <= 500 chars).\n\n''' + json.dumps({
                 'anchor': anchor, 'challenger_argument': thesis}, ensure_ascii=False)
             response = gl.nondet.exec_prompt(prompt, response_format='json')
             if not isinstance(response, dict):
-                return {'verdict': 'INCONCLUSIVE', 'scope_ok': False,
-                        'proof_complete': False, 'contradiction': False,
-                        'digest': data['digest'], 'reason': 'Invalid model response.'}
+                return _inconclusive('Invalid model response.')
+            model_verdict = response.get('verdict')
+            model_reason = response.get('reason')
+            model_flags = ('scope_ok', 'proof_complete', 'contradiction')
+            if (model_verdict not in ('CONTRADICTED', 'NOT_ESTABLISHED', 'OUT_OF_SCOPE') or
+                    any(type(response.get(name)) is not bool for name in model_flags) or
+                    not isinstance(model_reason, str) or len(model_reason) > 500):
+                return _inconclusive('Invalid model response.')
             flags = [response.get(x) is True for x in ('scope_ok', 'proof_complete', 'contradiction')]
-            verdict = str(response.get('verdict', 'NOT_ESTABLISHED'))
-            if verdict not in ('CONTRADICTED', 'NOT_ESTABLISHED', 'OUT_OF_SCOPE'):
-                verdict = 'NOT_ESTABLISHED'
+            verdict = model_verdict
             if verdict == 'CONTRADICTED' and not all(flags):
-                verdict = 'NOT_ESTABLISHED'
+                return _inconclusive('Incoherent model response.')
             if verdict == 'OUT_OF_SCOPE' and flags[0]:
-                verdict = 'NOT_ESTABLISHED'
+                return _inconclusive('Incoherent model response.')
             return {'verdict': verdict, 'scope_ok': flags[0],
                     'proof_complete': flags[1], 'contradiction': flags[2],
-                    'digest': data['digest'], 'reason': _clean_reason(response.get('reason', ''))}
+                    'digest': data['digest'], 'reason': _clean_reason(model_reason)}
 
         def validate(leader_result) -> bool:
             if not isinstance(leader_result, gl.vm.Return):
@@ -193,6 +206,11 @@ contradiction (bool), reason (plain string <= 500 chars).\n\n''' + json.dumps({
             return all(independent.get(k) == proposed.get(k) for k in keys)
 
         result = gl.vm.run_nondet_unsafe(evaluate, validate)
+        # This is a settlement-level invariant, not merely a model convention.
+        # A neutral result can refund only the bond; it must never carry a
+        # digest that PromiseVault could interpret as settled evidence.
+        if result.get('verdict') == 'INCONCLUSIVE':
+            result['digest'] = ''
         if result['verdict'] == 'CONTRADICTED':
             if not all(result[k] is True for k in ('scope_ok', 'proof_complete', 'contradiction')):
                 _fail('incoherent winning verdict')

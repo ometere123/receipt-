@@ -1,5 +1,5 @@
 export type CaseStatus = 'OPEN' | 'PENDING' | 'WON' | 'EXPIRED';
-export type AttemptStatus = 'COMMITTED' | 'PENDING' | 'SETTLED' | 'FORFEITED' | 'RECOVERED';
+export type AttemptStatus = 'COMMITTED' | 'PENDING' | 'RECOVERY_REQUESTED' | 'SETTLED' | 'FORFEITED' | 'RECOVERED';
 export type Verdict = 'CONTRADICTED' | 'NOT_ESTABLISHED' | 'OUT_OF_SCOPE' | 'INCONCLUSIVE';
 
 export interface ReceiptCase {
@@ -85,4 +85,4 @@ export async function loadEvidence(d: CaseDraft | ReceiptCase) {
   const source = new TextDecoder('utf-8', { fatal: true }).decode(sb);
   return { doc, source, doc_digest: await sha256Hex(new Uint8Array(db)), source_digest: await sha256Hex(new Uint8Array(sb)) };
 }
-export const statusLabel = (s: string) => ({ OPEN: 'Open case', PENDING: 'Under review', WON: 'Receipt found', EXPIRED: 'Expired', COMMITTED: 'Reveal needed', SETTLED: 'Settled' }[s] || s);
+export const statusLabel = (s: string) => ({ OPEN: 'Open case', PENDING: 'Under review', WON: 'Receipt found', EXPIRED: 'Expired', COMMITTED: 'Reveal needed', RECOVERY_REQUESTED: 'Recovery requested', SETTLED: 'Settled', FORFEITED: 'Bond forfeited', RECOVERED: 'Bond recovered' }[s] || s);

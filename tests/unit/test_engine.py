@@ -10,8 +10,8 @@ def source_setup():
           'claim':'Our protocol never exceeds a 2% distribution fee.',
           'doc_digest':hashlib.sha256(doc).hexdigest(),'source_digest':hashlib.sha256(src).hexdigest()}
     base='https://raw.githubusercontent.com/demo/fees/'+('a'*40)+'/'
-    NETWORK[base+'docs/fees.md']=types.SimpleNamespace(status_code=200,body=doc)
-    NETWORK[base+'src/fees.py']=types.SimpleNamespace(status_code=200,body=src)
+    NETWORK[base+'docs/fees.md']=types.SimpleNamespace(status=200,body=doc)
+    NETWORK[base+'src/fees.py']=types.SimpleNamespace(status=200,body=src)
     return case
 
 def test_only_bound_vault_may_assess(engine):
@@ -35,7 +35,30 @@ def test_mismatching_snapshot_never_awards(engine):
     case=source_setup();case['source_digest']='0'*64
     MSG.sender_address=Address(VAULT);MSG.contract_address=Address(ENGINE)
     engine.assess(12,7,json.dumps(case),'MAX_FEE_BPS = 500','This code path directly exceeds the stated promise in this release.')
-    assert json.loads(engine.get_verdict(12))['verdict']=='INCONCLUSIVE'
+    record=json.loads(engine.get_verdict(12))
+    assert record['verdict']=='INCONCLUSIVE'
+    assert record['digest']==''
+
+
+@pytest.mark.parametrize('response', [
+    {},
+    {'verdict': 'NOT_ESTABLISHED'},
+    {'verdict': 'NOT_ESTABLISHED', 'scope_ok': 0, 'proof_complete': False,
+     'contradiction': False, 'reason': 'bad boolean type'},
+    {'verdict': 'CONTRADICTED', 'scope_ok': True, 'proof_complete': False,
+     'contradiction': True, 'reason': 'incoherent winning result'},
+    {'verdict': 'NOT_ESTABLISHED', 'scope_ok': True, 'proof_complete': True,
+     'contradiction': True, 'reason': 'x' * 501},
+])
+def test_malformed_model_response_refunds_bond_neutrally(engine, response):
+    case=source_setup()
+    MSG.sender_address=Address(VAULT);MSG.contract_address=Address(ENGINE)
+    GL.nondet.response=response
+    engine.assess(12,7,json.dumps(case),'MAX_FEE_BPS = 500',
+                  'The source path needs a substantive, bounded explanation.')
+    record=json.loads(engine.get_verdict(12))
+    assert record['verdict']=='INCONCLUSIVE'
+    assert record['digest']==''
 
 def test_missing_source_anchor_is_out_of_scope(engine):
     case=source_setup();MSG.sender_address=Address(VAULT);MSG.contract_address=Address(ENGINE)
@@ -69,7 +92,7 @@ def test_activation_reemission_is_finalized(engine):
 def test_external_source_failure_is_neutral_not_winning(engine, status):
     case=source_setup()
     first = next(k for k in NETWORK if k.endswith('.md'))
-    NETWORK[first].status_code=status
+    NETWORK[first].status=status
     MSG.sender_address=Address(VAULT);MSG.contract_address=Address(ENGINE)
     engine.assess(12,7,json.dumps(case),'MAX_FEE_BPS = 500',
                   'Inspecting pinned source under a transient remote fetch failure.')

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bondFor, commitHash, genToWei, sha256Hex, validateDraft, validPath, validRepo, weiToGen, type CaseDraft } from './domain';
+import { bondFor, commitHash, genToWei, sha256Hex, statusLabel, validateDraft, validPath, validRepo, weiToGen, type CaseDraft } from './domain';
 const sample: CaseDraft = { title:'The documented ceiling',owner:'acme',repo:'protocol',commit:'a'.repeat(40),doc_path:'docs/policy.md',source_path:'src/policy.py',claim:'The service never exceeds a 2% distribution fee.',duration_hours:72,bounty:'1.25' };
 describe('money and evidence integrity', () => {
   it('converts exact wei without float rounding',()=>expect(genToWei('1.25')).toBe(1250000000000000000n));
@@ -21,4 +21,5 @@ describe('money and evidence integrity', () => {
     expect(x).not.toBe(y);
     expect(x).toMatch(/^[a-f0-9]{64}$/);
   });
+  it('exposes recovery as a distinct on-chain attempt state',()=>expect(statusLabel('RECOVERY_REQUESTED')).toBe('Recovery requested'));
 });
