@@ -6,13 +6,13 @@ The product has a custom, responsive **detective-club UI** with a case board, cl
 
 ## Status and verification boundaries
 
-This is a source package, **not** a predeployed application. The local evidence currently includes 46 deterministic contract tests, 7 exact-stack GenVM Direct Mode tests, full GenVM lint plus semantic validation for both contracts under the pinned `GENVM_VERSION=v0.3.0-rc7`, 13 frontend unit tests, 10 production-browser tests, a clean production dependency audit, and a successful production build. No live deployment, consensus lifecycle, source parity, or GEN payout receipt is claimed. The UI remains honest when deployment addresses are absent and shows no fabricated live bounties.
+This is a source package, **not** a complete predeployed application. The local evidence currently includes 51 deterministic contract tests, 11 exact-stack GenVM Direct Mode tests, full GenVM lint plus semantic validation for both contracts under the pinned `GENVM_VERSION=v0.3.0-rc7`, 14 frontend unit tests, 10 production-browser tests, a clean production dependency audit, and a successful production build. No complete deployment manifest, consensus lifecycle, source parity, or GEN payout receipt is claimed. The UI remains honest when deployment addresses are absent and shows no fabricated live bounties.
 
 ## Architecture
 
 ```
-Browser / injected EIP-1193 wallet (Next.js 15)
-      │ reads LATEST_FINAL / submits wallet-signed writes
+Browser / injected EIP-1193 wallet (Next.js 16.4.0)
+      │ reads finalized state / submits wallet-signed writes
       ▼
 PromiseVault.py — claim registry + GEN funding + bond + credits
       │ finalized IC message: assess(case, anchor, thesis)
@@ -138,7 +138,7 @@ MIT licensed. See `LICENSE`.
   unit harness; it covers the pinned runner's `Response.status` fetch path,
   malformed model neutrality, callback authorization, duplicate messages,
   recovery arbitration and accounting conservation.
-- The frontend passes 13 Vitest checks, typecheck, lint, a production build,
+- The frontend passes 14 Vitest checks, typecheck, lint, a production build,
   and 10 Playwright checks against the built app. Browser tests cover the real
   no-deployment state, wallet wrong-chain warning, major surfaces and mobile
   layout.
