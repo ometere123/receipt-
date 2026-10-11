@@ -72,6 +72,12 @@ All IC-to-IC messages use `on='finalized'`. GenLayer messages create independent
 
 `withdraw` zeros a credit and reserves the value for an **external finalization-triggered** GEN transfer to the EOA. The parent receipt alone does not prove the EVM-layer transfer; users must verify emitted transfer execution. On networks where that operation can fail after the GenVM state commits, a safe recovery mechanism needs protocol-level transfer-execution evidence, not an optimistic admin re-credit. See `docs/VALIDATION.md`; do not label this feature production-proven before full 61999 confirmation.
 
+The investigator desk exposes the caller's recent `get_dispatch()` records as
+**dispatch instructions**, including `EMITTED_UNCONFIRMED`; it does not label
+those records as paid receipts. The UI can only direct the user to verify the
+separate child transfer in the explorer, and it never retries a withdrawal
+blindly.
+
 ## Security invariants
 
 - No unfunded case.

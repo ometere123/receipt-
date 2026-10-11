@@ -21,5 +21,5 @@ describe('money and evidence integrity', () => {
     expect(x).not.toBe(y);
     expect(x).toMatch(/^[a-f0-9]{64}$/);
   });
-  it('exposes recovery as a distinct on-chain attempt state',()=>expect(statusLabel('RECOVERY_REQUESTED')).toBe('Recovery requested'));
+  it('exposes recovery and unconfirmed dispatch as distinct on-chain states',()=>{expect(statusLabel('RECOVERY_REQUESTED')).toBe('Recovery requested');expect(statusLabel('EMITTED_UNCONFIRMED')).toMatch(/receipt unconfirmed/);});
 });

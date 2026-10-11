@@ -9,6 +9,8 @@ export interface InjectedProvider {
   on?(event: string, cb: (...args: unknown[]) => void): void;
   removeListener?(event: string, cb: (...args: unknown[]) => void): void;
 }
+export interface TreasuryStatus { outstanding_wei: string; external_dispatch_wei: string; dispatch_count: number; ghost_balance_wei: string; }
+export interface WithdrawalDispatch { id: number; recipient: string; amount_wei: string; status: string; created_at: number; }
 declare global { interface Window { ethereum?: InjectedProvider } }
 export function injected(): InjectedProvider | null { return typeof window === 'undefined' ? null : window.ethereum || null; }
 export const publicClient = createClient({ chain: studionet });
@@ -24,6 +26,8 @@ function parseJSON<T>(response: unknown): T {
 }
 export async function caseCounts() { return parseJSON<{ cases: number; attempts: number }>(await read('get_counts')); }
 export async function vaultConfig() { return parseJSON<{ engine_ready?: boolean; funding_enabled?: boolean; withdrawal_status?: string }>(await read('get_config')); }
+export async function treasuryStatus() { return parseJSON<TreasuryStatus>(await read('get_treasury_status')); }
+export async function dispatchById(id: number) { const r = await read('get_dispatch', [id]); return r ? parseJSON<WithdrawalDispatch>(r) : null; }
 export async function casesPage(offset = 0, limit = 24) { return parseJSON<ReceiptCase[]>(await read('list_cases', [offset, limit])); }
 export async function caseById(id: number) { const r = await read('get_case', [id]); return r ? parseJSON<ReceiptCase>(r) : null; }
 export async function attemptById(id: number) { const r = await read('get_attempt', [id]); return r ? parseJSON<ReceiptAttempt>(r) : null; }

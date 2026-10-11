@@ -62,7 +62,7 @@ npm run dev
 ```
 
 The frontend at `http://localhost:3000` displays a visible **deployment not configured** notice until both deployed addresses are present. This is intentional: it does not substitute fictional data.
-`NEXT_PUBLIC_FUNDING_ENABLED` defaults to `false`; the UI also reads the vault's on-chain `funding_enabled` flag, so both gates must be explicitly true before a new bounty or challenger bond can be submitted. The replacement `PromiseVault` constructor intentionally defaults that flag to false and has no public enable switch. Existing case records, reveal/recovery flows and credits remain readable; withdrawal is still labeled `EMITTED_UNCONFIRMED`.
+`NEXT_PUBLIC_FUNDING_ENABLED` defaults to `false`; the UI also reads the vault's on-chain `funding_enabled` flag, so both gates must be explicitly true before a new bounty or challenger bond can be submitted. The replacement `PromiseVault` constructor intentionally defaults that flag to false and has no public enable switch. Existing case records, reveal/recovery flows and credits remain readable; the investigator desk shows recent withdrawal dispatch instructions as `EMITTED_UNCONFIRMED`, never as verified receipts.
 
 ## 61999 deployment (real transactions)
 
