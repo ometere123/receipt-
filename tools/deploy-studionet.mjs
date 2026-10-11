@@ -29,8 +29,9 @@ const run=(args)=>{
   return output;
 };
 function save(state) {writeFileSync(journal,JSON.stringify(state,null,2)+'\n');}
-function matchAddress(output,label) {
-  const m=output.match(new RegExp(`${label}\\s*[:=]\\s*(0x[0-9a-fA-F]{40})`,'i'));
+function matchAddress(output,label='Contract Address') {
+  const field=label==='Contract Address'?'(?:Contract\\s+Address|contract_address)':label;
+  const m=output.match(new RegExp(`${field}\\s*[:=]\\s*[\"']?(0x[0-9a-fA-F]{40})`,'i'));
   if(!m)throw Error(`Could not parse ${label}. Inspect CLI output before retrying; the transaction may already exist.`);
   return m[1];
 }
@@ -41,15 +42,26 @@ function matchTx(output) {
 }
 function confirmFinalized(hash) {
   const text=run(['receipt',hash,'--status','FINALIZED']);
-  if(!/FINALIZED/i.test(text) || !/FINISHED_WITH_RETURN|EXECUTION\s*(?:SUCCESS|SUCCEEDED)|"txExecutionResultName"\s*:\s*"FINISHED_WITH_RETURN"/i.test(text)) {
+  const finalized=/status_name\s*[:=]\s*['"]FINALIZED['"]|txExecutionResultName\s*[:=]\s*['"]FINISHED_WITH_RETURN['"]|status\s*[:=]\s*5\b/i.test(text);
+  const successful=/leader_receipt[\s\S]{0,12000}execution_result\s*[:=]\s*['"]SUCCESS['"]|result_name\s*[:=]\s*['"]MAJORITY_AGREE['"]|last_round[\s\S]{0,4000}result\s*[:=]\s*6\b|txExecutionResultName\s*[:=]\s*['"]FINISHED_WITH_RETURN['"]|EXECUTION\s*(?:SUCCESS|SUCCEEDED)/i.test(text);
+  if(!finalized || !successful) {
     throw Error(`Unable to prove FINALIZED + GenVM success for ${hash}; inspect the receipt manually. No automatic retry.`);
   }
 }
 function deploy(state,key,path,args) {
   if (state[key]?.verified) return state[key].address;
-  // If a prior submission returned an unparseable output, stop rather than
-  // silently broadcasting a duplicate that would orphan a deployed contract.
-  if (state[key]?.ambiguous) throw Error(`Ambiguous prior ${key} deployment. Inspect saved CLI output and the network; do not resubmit blindly.`);
+  // Recover a prior submission from its durable output before considering a
+  // new broadcast. This is deliberately parse-and-confirm only: no duplicate
+  // deployment is sent when a previous CLI invocation already submitted one.
+  if (state[key]?.ambiguous) {
+    const prior=state[key].raw_output||'';
+    if(!prior) throw Error(`Ambiguous prior ${key} deployment has no saved CLI output. Inspect the network before any retry.`);
+    const hash=matchTx(prior);
+    const address=matchAddress(prior);
+    state[key]={...state[key],ambiguous:false,hash,address,verified:false};save(state);
+    confirmFinalized(hash);
+    state[key].verified=true;save(state);return address;
+  }
   if (state[key]?.hash) {
     confirmFinalized(state[key].hash);
     if (!state[key].address) throw Error(`Existing ${key} tx confirmed but address missing in journal; inspect receipt and update journal manually.`);
