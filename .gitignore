@@ -13,3 +13,4 @@ receipt-deployment.manifest.json
 receipt-deployment.journal.json
 receipt-deployment.state.json
 receipt-deployment.failed-attempt.json
+receipt-live-lifecycle.json
