@@ -57,6 +57,20 @@ receipt wall, and About. The deterministic local run passed all 11 browser
 tests, including zero WCAG 2A/2AA violations on each primary view. This keeps
 the contrast fixes regression-tested without depending on live chain data.
 
+The current production frontend candidate was deployed from commit
+`7253beaefe8902315a66fc161bab3d7611aa9cd2` as Vercel deployment
+`dpl_61WzUhdu9arJpNwRL9KxdVkaEqob`, aliased to
+`https://receipt-five-cyan.vercel.app`. A protected `vercel curl` request to
+`/api/build-info` returned the same commit and deployment ID, chain `61999`,
+PromiseVault `0x6A5366Dcc45E6fb137534BA09f44632593c18880`, and ProofEngine
+`0xa2E4DaFe86229e6A3d1C92C6dCEb680dd4a55128`. The Vercel project is the single
+`receipt` project with root directory `frontend`; its four required public
+configuration variables are present in Production, Preview, and Development.
+The production deployment's error-log query returned no logs. The current
+investigator desk also renders recent withdrawal dispatch instructions as
+`EMITTED_UNCONFIRMED` records, without presenting them as payment receipts or
+retrying them automatically.
+
 ## Deployed-source parity
 
 At commit `de3cd57cf3301b2f8dca0e3cec5f9bb539b1b52c`, `npm run source:verify`
