@@ -31,6 +31,17 @@ The binding parent and activation child were independently observed as
 FINALIZED with successful leader execution. `get_config` reports
 `engine_ready: true`, and `get_vault` returns the deployed PromiseVault.
 
+## Production frontend read-only check
+
+After the production deployment containing the funding gate, a headless browser
+read-only check of `https://receipt-five-cyan.vercel.app/` loaded five live
+case cards from the 61999 registry and displayed the `Live funding is paused`
+warning. The first live `OPEN` case was opened successfully; its evidence and
+case details remained readable, `New challenges are paused` was visible, and
+there were zero `Commit challenge` buttons. No wallet connection and no write
+transaction was attempted. This verifies that the production UI preserves
+inspection of existing cases while withholding new challenger-bond deposits.
+
 ## Deployed-source parity
 
 At commit `de3cd57cf3301b2f8dca0e3cec5f9bb539b1b52c`, `npm run source:verify`
