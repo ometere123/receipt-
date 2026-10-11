@@ -26,6 +26,7 @@ const ENGINE = manifest.proof_engine.address;
 const COMMIT = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
 const DOC_PATH = 'docs/ADVERSARIAL_LIVE_CLAIM.md';
 const SOURCE_PATH = 'contracts/PromiseVault.py';
+const ENGINE_SOURCE_PATH = 'contracts/ProofEngine.py';
 const CLAIM = 'For this validation case, an EOA `withdraw` keeps the account\'s claimable credit intact until the external GEN transfer has been confirmed.';
 const SOURCE_ANCHOR = 'self.credits[recipient] = u256(0)';
 const BAD_ANCHOR = '# EVM child is created after finalization.';
@@ -161,16 +162,17 @@ async function main() {
   const challengerClient = createClient({ chain: studionet, account: challenger });
   const docDigest = await remoteDigest(DOC_PATH);
   const sourceDigest = await remoteDigest(SOURCE_PATH);
+  const engineSourceDigest = await remoteDigest(ENGINE_SOURCE_PATH);
   const badSourceDigest = '0'.repeat(64);
   evidence.wallets = { sponsor: sponsor.address, challenger: challenger.address };
   evidence.evidence = { doc_path: DOC_PATH, source_path: SOURCE_PATH, doc_digest: docDigest, source_digest: sourceDigest };
   save();
 
-  async function createCase(label, digest = sourceDigest) {
+  async function createCase(label, digest = sourceDigest, sourcePath = SOURCE_PATH) {
     const counts = await readJSON(readClient, VAULT, 'get_counts');
     const id = Number(counts.cases) + 1;
     const tx = await writeTx(sponsorClient, VAULT, 'create_case', [
-      `Live ${label} validation`, 'ometere123', 'receipt-', COMMIT, DOC_PATH, SOURCE_PATH,
+      `Live ${label} validation`, 'ometere123', 'receipt-', COMMIT, DOC_PATH, sourcePath,
       CLAIM, docDigest, digest, 24,
     ], BOUNTY, `${label} create_case`);
     const state = await readJSON(readClient, VAULT, 'get_case', [id]);
@@ -231,9 +233,12 @@ async function main() {
   if (BigInt(positive.balance_after_withdraw) <= BigInt(positive.balance_before_withdraw)) throw new Error('Successful adjudication did not produce a measurable recipient balance increase.');
   save();
 
-  const negative = await createCase('negative insufficient evidence');
-  await commitAndReveal(negative, 'negative', BAD_ANCHOR,
-    'This isolated comment is the alleged contradiction, but it does not show a reachable executable path or prove the published payment claim false.');
+  const priorNegative = evidence.cases.find(item => item.label === 'negative insufficient evidence' && item.final_attempt?.verdict === 'NOT_ESTABLISHED');
+  const negative = priorNegative || await createCase(
+    evidence.cases.some(item => item.label === 'negative insufficient evidence') ? 'negative unrelated source' : 'negative insufficient evidence',
+    engineSourceDigest, ENGINE_SOURCE_PATH);
+  if (!priorNegative) await commitAndReveal(negative, 'negative-unrelated', 'self.is_bound = False',
+    'The selected source file is the unrelated adjudication engine and does not contain the withdraw path. This evidence is insufficient to establish a contradiction about external payment custody.');
   if (negative.final_attempt.verdict !== 'NOT_ESTABLISHED' || negative.final_case.status !== 'OPEN') throw new Error(`Negative case did not settle as NOT_ESTABLISHED/OPEN: ${negative.final_attempt.verdict}/${negative.final_case.status}`);
   if (BigInt(negative.sponsor_credit) < BOND) throw new Error('Negative case did not credit the forfeited bond to the sponsor.');
   save();
