@@ -1,0 +1,19 @@
+{
+  "name": "receipt-genlayer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RECEIPT! — source-grounded documentation promise bounties on GenLayer Studionet",
+  "scripts": {
+    "cli": "genlayer",
+    "preflight": "node tools/preflight.mjs",
+    "deploy:61999": "node tools/deploy-studionet.mjs",
+    "test:contracts": "python -m pytest -q tests/unit",
+    "test:direct": "python -m pytest -v tests/direct",
+    "source:verify": "node tools/verify-deployed-source.mjs",
+    "lint:contracts": "node tools/lint-contracts.mjs",
+    "typecheck:frontend": "npm --prefix frontend run typecheck",
+    "test:frontend": "npm --prefix frontend test",
+    "build:frontend": "npm --prefix frontend run build"
+  },
+  "devDependencies": {"genlayer": "0.39.1"}
+}

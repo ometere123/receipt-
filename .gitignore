@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.tsbuildinfo
+artifacts/
+node_modules/
+frontend/node_modules/
+frontend/.next/
+frontend/playwright-report/
+frontend/test-results/
+frontend/.env.local
+receipt-deployment.manifest.json
+receipt-deployment.journal.json
