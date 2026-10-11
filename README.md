@@ -6,7 +6,7 @@ The product has a custom, responsive **detective-club UI** with a case board, cl
 
 ## Status and verification boundaries
 
-The current source includes 79 deterministic contract tests, 14 exact-stack GenVM Direct Mode tests, full GenVM lint plus semantic validation for both contracts under the pinned `GENVM_VERSION=v0.3.0-rc7`, 14 frontend unit tests, 10 production-browser tests, a clean production dependency audit, and a successful production build. A real Studionet deployment, exact source parity, finalized two-wallet lifecycle, and one independently observed EVM payout receipt are recorded in [`docs/LIVE_VALIDATION.md`](docs/LIVE_VALIDATION.md). **Live funding remains BLOCKED** because the external-transfer failure/recovery path is not proven; the UI and replacement contract now enforce a funding-off default for both bounties and challenger bonds, but this is not an economic-safety certification.
+The current source includes 81 deterministic contract tests, 15 exact-stack GenVM Direct Mode tests, full GenVM lint plus semantic validation for both contracts under the pinned `GENVM_VERSION=v0.3.0-rc7`, 14 frontend unit tests, 11 production-browser tests, a clean production dependency audit, and a successful production build. A real Studionet deployment, exact source parity, finalized two-wallet lifecycle, and one independently observed EVM payout receipt are recorded in [`docs/LIVE_VALIDATION.md`](docs/LIVE_VALIDATION.md). **Live funding remains BLOCKED** because the external-transfer failure/recovery path is not proven; the UI and replacement contract now enforce a funding-off default for both bounties and challenger bonds, but this is not an economic-safety certification.
 
 ## Architecture
 
@@ -134,15 +134,15 @@ MIT licensed. See `LICENSE`.
 
 ## Adversarial and deployment evidence improvements
 
-- 79 deterministic unit checks and 14 exact-stack GenVM Direct Mode cases pass
+- 81 deterministic unit checks and 15 exact-stack GenVM Direct Mode cases pass
   locally. Direct Mode uses the pinned testing-suite and is separate from the
   unit harness; it covers the pinned runner's `Response.status` fetch path,
   malformed model neutrality, callback authorization, duplicate messages,
   recovery arbitration and accounting conservation.
 - The frontend passes 14 Vitest checks, typecheck, lint, a production build,
-  and 10 Playwright checks against the built app. Browser tests cover the real
-  no-deployment state, wallet wrong-chain warning, major surfaces and mobile
-  layout.
+  and 11 Playwright checks against the built app. Browser tests cover the real
+  no-deployment state, wallet wrong-chain warning, major surfaces, mobile
+  layout, and WCAG 2A/2AA contrast and semantics across the primary views.
 - Bind => `activate_engine` is a finalized asynchronous handshake. Funding is
   blocked until `PromiseVault.get_config.engine_ready == true`.
 - Replacement `PromiseVault` constructors also set `funding_enabled = false`;

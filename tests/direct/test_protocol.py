@@ -266,6 +266,19 @@ def test_vault_callback_financial_conservation_and_duplicate_message(
         vault.withdraw()
 
 
+def test_sponsor_cannot_reclaim_pending_challenge(
+        direct_vm, direct_deploy, direct_alice, direct_bob):
+    vault, vault_address = _activated_vault(direct_vm, direct_deploy, direct_alice)
+    _fund_and_reveal(direct_vm, vault, vault_address, direct_alice, direct_bob)
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    with direct_vm.expect_revert('not freely expirable'):
+        vault.expire_case(1)
+    assert json.loads(vault.get_case(1))['status'] == 'PENDING'
+    assert int(vault.get_credit(_addr(direct_alice))) == 0
+    assert int(json.loads(vault.get_treasury_status())['outstanding_wei']) == 10 ** 18 + 5 * 10 ** 16
+
+
 def test_recovery_tombstone_blocks_late_assessment_and_duplicate_confirmation(
         direct_vm, direct_deploy, direct_alice, direct_bob):
     vault, vault_address = _activated_vault(direct_vm, direct_deploy, direct_alice)

@@ -97,6 +97,15 @@ def test_unrevealed_forfeit_and_expiry(published,monkeypatch):
     assert published.get_credit(SPONSOR)==str(10**18+10**18//20)
     with pytest.raises(UserError):published.expire_case(1)
 
+def test_sponsor_cannot_reclaim_while_challenge_is_pending(published):
+    salt,anchor,thesis=commit(published)
+    published.reveal_attempt(1,salt,anchor,thesis)
+    with pytest.raises(UserError,match='not freely expirable'):
+        published.expire_case(1)
+    assert published._require_case(1)['status']=='PENDING'
+    assert published.get_credit(SPONSOR)=='0'
+    assert published.outstanding==10**18+10**18//20
+
 def test_pending_timeout_with_stored_verdict_replays_win_not_refund(published,engine,monkeypatch):
     salt,anchor,thesis=commit(published)
     published.reveal_attempt(1,salt,anchor,thesis)
@@ -179,6 +188,16 @@ def test_withdraw_rejects_cross_contract_origin(published):
     MSG.sender_address = Address(CLAIMANT)
     MSG.origin_address = Address(SPONSOR)
     with pytest.raises(UserError, match='direct EOA'):
+        published.withdraw()
+    assert published.get_credit(CLAIMANT) == str(10**14)
+    assert published.dispatch_count == 0
+
+def test_wallet_cannot_withdraw_another_wallets_credit(published):
+    published.credits[Address(CLAIMANT)] = 10**14
+    published.outstanding += 10**14
+    MSG.sender_address = Address(SPONSOR)
+    MSG.origin_address = Address(SPONSOR)
+    with pytest.raises(UserError, match='nothing'):
         published.withdraw()
     assert published.get_credit(CLAIMANT) == str(10**14)
     assert published.dispatch_count == 0

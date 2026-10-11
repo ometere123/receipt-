@@ -5,15 +5,15 @@ This document is a test specification and evidence ledger, **not** an economic-s
 ## Current local evidence
 
 - Exact Python environment: Python 3.12, `genlayer-py 0.18.0`, `genlayer-test 0.29.2`, `genvm-linter 0.11.0`.
-- `pytest -q tests/unit`: 79 passed, including the exhaustive 24-case
+- `pytest -q tests/unit`: 81 passed, including the exhaustive 24-case
   verdict/flag settlement matrix.
-- `pytest -q tests/direct`: 14 passed in genuine Direct Mode, including a
+- `pytest -q tests/direct`: 15 passed in genuine Direct Mode, including a
   real GenVM `Response.status` source-fetch/adjudication path, malformed-model
   neutrality, callback authorization, duplicate settlement, recovery
   confirmation and financial-conservation flows.
 - Fast `genvm-lint lint --json`: both contracts pass all 3 checks.
 - `npm run lint:contracts`: full lint and semantic validation pass for both contracts with `GENVM_VERSION=v0.3.0-rc7`; the output notes that a newer runner exists, but the pinned target is deliberate for the 61999 toolchain.
-- Frontend: typecheck passed, Vitest 14 passed, ESLint passed, `npm audit --omit=dev --audit-level=high` reports 0 high-severity findings, production build passed, and Playwright 10 passed against the built app. The CSS has existing Autoprefixer flex-start/flex-end compatibility warnings.
+- Frontend: typecheck passed, Vitest 14 passed, ESLint passed, `npm audit --omit=dev --audit-level=high` reports 0 high-severity findings, production build passed, and Playwright 11 passed against the built app, including the WCAG 2A/2AA primary-view regression gate. The CSS has existing Autoprefixer flex-start/flex-end compatibility warnings.
 - A real Studionet 61999 deployment, exact source parity for the older
   `de3cd57...` candidate, finalized child messages, two-wallet adjudication,
   and one independently observed EVM payout receipt are recorded in
