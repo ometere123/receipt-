@@ -120,6 +120,18 @@ this chain because `feeManagerContract/roundsStorageContract` are missing.
 No appeal, finalization, or recovery write was attempted; the available
 evidence does not prove a supported action that can safely resolve this child.
 
+At `2026-10-11T22:19Z`, a fresh read-only recheck returned the same Case 3
+state: `get_case(3)` was `PENDING`, `get_attempt(3)` was `PENDING` with an
+empty verdict, `gen_getTransactionStatus` for the assessment child returned
+`CANCELED`, and `gen_getTransactionLifecycle` remained unavailable. The
+existing-evidence path of `node tools/live-lifecycle.mjs` completed without a
+write and emitted `BLOCKED` with Case 3 as the only unresolved case. The
+positive withdrawal child was also re-read: it remains `FINALIZED` with
+`result_name: NO_MAJORITY`, `value_credited: true`, and an independent EVM
+receipt of `status: 0x1`; the vault dispatch remains
+`EMITTED_UNCONFIRMED`. This reinforces that one successful observed transfer
+does not establish a supported recovery path for a failed child.
+
 Case 4's finalized ProofEngine child was
 `0x9dd07a6df79cf71e759bcce0f611e47826ce6e62b0364eac9cc27437c034eef4`,
 with callback `0x0a7556eef4fbf8ecbabd1b6ce85e78eed951e4cafa13e6484213707a922d9e41`.
