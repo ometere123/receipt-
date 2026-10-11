@@ -257,14 +257,28 @@ async function main() {
   if (BigInt(negative.sponsor_credit) < BOND) throw new Error('Negative case did not credit the forfeited bond to the sponsor.');
   save();
 
-  const inconclusive = await createCase('inconclusive integrity failure', badSourceDigest);
-  await commitAndReveal(inconclusive, 'inconclusive', SOURCE_ANCHOR,
+  const priorInconclusive = evidence.cases.find(item => item.label === 'inconclusive integrity failure' && item.final_attempt?.verdict === 'INCONCLUSIVE');
+  const inconclusive = priorInconclusive || await createCase('inconclusive integrity failure', badSourceDigest);
+  if (!priorInconclusive) await commitAndReveal(inconclusive, 'inconclusive', SOURCE_ANCHOR,
     'The source digest is intentionally invalid, so no substantive contradiction can be established from authenticated evidence.');
   if (inconclusive.final_attempt.verdict !== 'INCONCLUSIVE' || inconclusive.final_case.status !== 'OPEN') throw new Error(`Inconclusive case did not settle neutrally: ${inconclusive.final_attempt.verdict}/${inconclusive.final_case.status}`);
   if (BigInt(inconclusive.challenger_credit) < BOND) throw new Error('Inconclusive case did not refund the challenger bond.');
   save();
-  evidence.result = 'SUCCESS'; save();
-  console.log(JSON.stringify({ result: evidence.result, cases: evidence.cases.map(c => ({label: c.label, id: c.id, verdict: c.final_attempt.verdict, status: c.final_case.status})), payout_dispatch: evidence.cases[0].dispatch, recipient_balance_delta: (BigInt(positive.balance_after_withdraw) - BigInt(positive.balance_before_withdraw)).toString() }, null, 2));
+  evidence.result = 'BLOCKED';
+  evidence.validation_status = 'REQUIRED_LIFECYCLES_PASSED_EXTERNAL_TRANSFER_SAFETY_UNPROVEN';
+  evidence.unresolved_cases = evidence.cases
+    .filter(c => !c.final_attempt || !c.final_case)
+    .map(c => ({ label: c.label, id: c.id, create: c.create?.hash, reveal: c.reveal?.hash }));
+  evidence.funding_status = 'BLOCKED_UNVERIFIED_EXTERNAL_TRANSFER_FAILURE_PATH';
+  save();
+  console.log(JSON.stringify({
+    result: evidence.result,
+    validation_status: evidence.validation_status,
+    cases: evidence.cases.map(c => ({label: c.label, id: c.id, verdict: c.final_attempt?.verdict || null, status: c.final_case?.status || null})),
+    unresolved_cases: evidence.unresolved_cases,
+    payout_dispatch: evidence.cases[0].dispatch,
+    recipient_balance_delta: (BigInt(positive.balance_after_withdraw) - BigInt(positive.balance_before_withdraw)).toString()
+  }, null, 2));
 }
 
 main().catch(error => { evidence.result = 'BLOCKED'; evidence.error = String(error?.stack || error); save(); console.error('LIVE LIFECYCLE BLOCKED:', error?.message || error); process.exitCode = 1; });

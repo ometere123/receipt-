@@ -6,7 +6,7 @@ The product has a custom, responsive **detective-club UI** with a case board, cl
 
 ## Status and verification boundaries
 
-This is a source package, **not** a complete predeployed application. The local evidence currently includes 53 deterministic contract tests, 11 exact-stack GenVM Direct Mode tests, full GenVM lint plus semantic validation for both contracts under the pinned `GENVM_VERSION=v0.3.0-rc7`, 14 frontend unit tests, 10 production-browser tests, a clean production dependency audit, and a successful production build. No complete deployment manifest, consensus lifecycle, source parity, or GEN payout receipt is claimed. The UI remains honest when deployment addresses are absent and shows no fabricated live bounties.
+The current source includes 53 deterministic contract tests, 11 exact-stack GenVM Direct Mode tests, full GenVM lint plus semantic validation for both contracts under the pinned `GENVM_VERSION=v0.3.0-rc7`, 14 frontend unit tests, 10 production-browser tests, a clean production dependency audit, and a successful production build. A real Studionet deployment, exact source parity, finalized two-wallet lifecycle, and one independently observed EVM payout receipt are recorded in [`docs/LIVE_VALIDATION.md`](docs/LIVE_VALIDATION.md). **Live funding remains BLOCKED** because the external-transfer failure/recovery path is not proven; the UI must not be treated as an economic-safety certification.
 
 ## Architecture
 
@@ -102,7 +102,7 @@ The app checks both files' bytes and SHA256 before allowing a funded write. The 
 - `genvm-lint check` and `validate` for both contracts: GenVM static and semantic validation (required before deployment).
 - `cd frontend && npm run typecheck && npm test && npm run lint && npm run build && npm run test:e2e`: frontend.
 - `npm run preflight`: real `eth_chainId` check before deployment.
-- **Live acceptance:** completed funded case, challenger bond, reveal, adjudication child, callback, claim and actual GEN payout with explorer receipts, two different wallets. See [`docs/VALIDATION.md`](docs/VALIDATION.md).
+- **Live validation:** funded case, challenger bond, reveal, adjudication child, callback, two-wallet negative/inconclusive cases, and an independently observed tiny EVM payout receipt are recorded in [`docs/LIVE_VALIDATION.md`](docs/LIVE_VALIDATION.md). The external-transfer safety gate remains BLOCKED.
 
 ## Repository contents
 
@@ -131,7 +131,7 @@ Source: GenLayer documentation for [Intelligent Contracts](https://docs.genlayer
 MIT licensed. See `LICENSE`.
 
 
-## Adversarial and deployment evidence improvements (pre-deployment)
+## Adversarial and deployment evidence improvements
 
 - 53 deterministic unit checks and 11 exact-stack GenVM Direct Mode cases pass
   locally. Direct Mode uses the pinned testing-suite and is separate from the
@@ -156,6 +156,11 @@ MIT licensed. See `LICENSE`.
   remains unresolved. A dispatch ledger does NOT solve it. This package MUST
   NOT be marketed as economically production-safe until a live failure and
   success study establishes the operational boundary.
+- Current deployment addresses, transaction hashes, exact source digests and
+  the complete recorded two-wallet lifecycle are in
+  [`docs/LIVE_VALIDATION.md`](docs/LIVE_VALIDATION.md). That document preserves
+  the successful EVM receipt and the unresolved `NO_MAJORITY` child result
+  separately; neither is silently promoted to a safe payout guarantee.
 
 ### Finalized timeout recovery
 

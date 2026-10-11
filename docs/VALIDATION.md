@@ -1,6 +1,6 @@
 # Validation and proof-of-operation requirements
 
-This document is a test specification and evidence ledger, **not** a record claiming a deployed application or passed Studionet lifecycle. Do not invent or backfill transactions.
+This document is a test specification and evidence ledger, **not** an economic-safety certification. Current deployment and lifecycle evidence is recorded in [`LIVE_VALIDATION.md`](LIVE_VALIDATION.md); do not invent or backfill transactions.
 
 ## Current local evidence
 
@@ -13,9 +13,13 @@ This document is a test specification and evidence ledger, **not** a record clai
 - Fast `genvm-lint lint --json`: both contracts pass all 3 checks.
 - `npm run lint:contracts`: full lint and semantic validation pass for both contracts with `GENVM_VERSION=v0.3.0-rc7`; the output notes that a newer runner exists, but the pinned target is deliberate for the 61999 toolchain.
 - Frontend: typecheck passed, Vitest 14 passed, ESLint passed, `npm audit --omit=dev --audit-level=high` reports 0 high-severity findings, production build passed, and Playwright 10 passed against the built app. The CSS has existing Autoprefixer flex-start/flex-end compatibility warnings.
-- No deployment manifest or deployed addresses exist in this source package;
-  live source parity, child-message lifecycle, consensus, and external GEN
-  payout receipt remain unverified until a deployment run records them.
+- A real Studionet 61999 deployment, exact source parity, finalized child
+  messages, two-wallet adjudication, and one independently observed EVM payout
+  receipt are recorded in [`LIVE_VALIDATION.md`](LIVE_VALIDATION.md).
+- The economic safety gate remains BLOCKED: the payout child reached
+  `NO_MAJORITY` even though its EVM receipt was successful, and the contract
+  ledger remains `EMITTED_UNCONFIRMED`. This does not establish safe recovery
+  after a failed child transfer.
 
 ## Checks already implementable offline
 
