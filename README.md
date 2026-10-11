@@ -6,7 +6,7 @@ The product has a custom, responsive **detective-club UI** with a case board, cl
 
 ## Status and verification boundaries
 
-The current source includes 55 deterministic contract tests, 13 exact-stack GenVM Direct Mode tests, full GenVM lint plus semantic validation for both contracts under the pinned `GENVM_VERSION=v0.3.0-rc7`, 14 frontend unit tests, 10 production-browser tests, a clean production dependency audit, and a successful production build. A real Studionet deployment, exact source parity, finalized two-wallet lifecycle, and one independently observed EVM payout receipt are recorded in [`docs/LIVE_VALIDATION.md`](docs/LIVE_VALIDATION.md). **Live funding remains BLOCKED** because the external-transfer failure/recovery path is not proven; the UI and replacement contract now enforce a funding-off default, but this is not an economic-safety certification.
+The current source includes 78 deterministic contract tests, 13 exact-stack GenVM Direct Mode tests, full GenVM lint plus semantic validation for both contracts under the pinned `GENVM_VERSION=v0.3.0-rc7`, 14 frontend unit tests, 10 production-browser tests, a clean production dependency audit, and a successful production build. A real Studionet deployment, exact source parity, finalized two-wallet lifecycle, and one independently observed EVM payout receipt are recorded in [`docs/LIVE_VALIDATION.md`](docs/LIVE_VALIDATION.md). **Live funding remains BLOCKED** because the external-transfer failure/recovery path is not proven; the UI and replacement contract now enforce a funding-off default, but this is not an economic-safety certification.
 
 ## Architecture
 
@@ -134,7 +134,7 @@ MIT licensed. See `LICENSE`.
 
 ## Adversarial and deployment evidence improvements
 
-- 55 deterministic unit checks and 13 exact-stack GenVM Direct Mode cases pass
+- 78 deterministic unit checks and 13 exact-stack GenVM Direct Mode cases pass
   locally. Direct Mode uses the pinned testing-suite and is separate from the
   unit harness; it covers the pinned runner's `Response.status` fetch path,
   malformed model neutrality, callback authorization, duplicate messages,

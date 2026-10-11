@@ -36,6 +36,32 @@ def _inconclusive(reason: str) -> dict:
             'digest': '', 'reason': _clean_reason(reason)}
 
 
+def _normalize_model_result(verdict: str, scope_ok: bool,
+                            proof_complete: bool, contradiction: bool,
+                            digest: str, reason: str) -> dict:
+    """Apply the complete label/flag settlement policy.
+
+    Only four semantic shapes are settlement-valid: a fully supported
+    contradiction, a scoped-but-unproven claim, an out-of-scope claim, or a
+    neutral inconclusive result. Any label/flag mismatch is neutralized before
+    the callback can move a bond.
+    """
+    flags = (scope_ok, proof_complete, contradiction)
+    if flags == (True, True, True) and verdict == 'CONTRADICTED':
+        return {'verdict': verdict, 'scope_ok': scope_ok,
+                'proof_complete': proof_complete, 'contradiction': contradiction,
+                'digest': digest, 'reason': _clean_reason(reason)}
+    if flags == (False, False, False) and verdict == 'OUT_OF_SCOPE':
+        return {'verdict': verdict, 'scope_ok': scope_ok,
+                'proof_complete': proof_complete, 'contradiction': contradiction,
+                'digest': digest, 'reason': _clean_reason(reason)}
+    if scope_ok and not contradiction and verdict == 'NOT_ESTABLISHED':
+        return {'verdict': verdict, 'scope_ok': scope_ok,
+                'proof_complete': proof_complete, 'contradiction': contradiction,
+                'digest': digest, 'reason': _clean_reason(reason)}
+    return _inconclusive('Incoherent model response.')
+
+
 def _key(value: int) -> str:
     return str(int(value))
 
@@ -190,21 +216,8 @@ contradiction (bool), reason (plain string <= 500 chars).\n\n''' + json.dumps({
                     not isinstance(model_reason, str) or len(model_reason) > 500):
                 return _inconclusive('Invalid model response.')
             flags = [response.get(x) is True for x in ('scope_ok', 'proof_complete', 'contradiction')]
-            verdict = model_verdict
-            if verdict == 'CONTRADICTED' and not all(flags):
-                return _inconclusive('Incoherent model response.')
-            # Keep the three flags and the label as one settlement-level
-            # policy. A NOT_ESTABLISHED answer with contradiction=true is not
-            # a valid neutral finding: treating it as such would move the
-            # challenger's bond to the sponsor. Any incoherent combination is
-            # neutral INCONCLUSIVE instead.
-            if verdict == 'NOT_ESTABLISHED' and flags[2]:
-                return _inconclusive('Incoherent model response.')
-            if verdict == 'OUT_OF_SCOPE' and (flags[0] or flags[1] or flags[2]):
-                return _inconclusive('Incoherent model response.')
-            return {'verdict': verdict, 'scope_ok': flags[0],
-                    'proof_complete': flags[1], 'contradiction': flags[2],
-                    'digest': data['digest'], 'reason': _clean_reason(model_reason)}
+            return _normalize_model_result(model_verdict, flags[0], flags[1],
+                                           flags[2], data['digest'], model_reason)
 
         def validate(leader_result) -> bool:
             if not isinstance(leader_result, gl.vm.Return):
