@@ -132,6 +132,19 @@ receipt of `status: 0x1`; the vault dispatch remains
 `EMITTED_UNCONFIRMED`. This reinforces that one successful observed transfer
 does not establish a supported recovery path for a failed child.
 
+A direct read through the repository's pinned CLI `0.39.1` and
+`genlayer-js 1.1.8` exposed additional Case 3 lifecycle fields: the canceled
+assessment reports `consensus_data.error: max_recovery_cycles_exceeded`,
+`recovery_count: 3`, `value_credited: false`, and an empty
+`triggered_transactions` list. Its leader receipt contains a pending
+finalization callback message, but cancellation produced no callback child.
+The pinned Studionet chain definition has no fee-manager, rounds-storage, or
+appeals contract; consequently the SDK's read-only `getMinAppealBond`,
+`getRoundNumber`, and `canAppeal` operations each fail with an explicit
+unsupported-chain error. The transaction is `CANCELED`, not
+`READY_TO_FINALIZE`, so the CLI's finalize action is not applicable. No
+appeal, finalize, or recovery write was attempted.
+
 Case 4's finalized ProofEngine child was
 `0x9dd07a6df79cf71e759bcce0f611e47826ce6e62b0364eac9cc27437c034eef4`,
 with callback `0x0a7556eef4fbf8ecbabd1b6ce85e78eed951e4cafa13e6484213707a922d9e41`.
