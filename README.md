@@ -6,7 +6,7 @@ The product has a custom, responsive **detective-club UI** with a case board, cl
 
 ## Status and verification boundaries
 
-This is a source package, **not** a complete predeployed application. The local evidence currently includes 51 deterministic contract tests, 11 exact-stack GenVM Direct Mode tests, full GenVM lint plus semantic validation for both contracts under the pinned `GENVM_VERSION=v0.3.0-rc7`, 14 frontend unit tests, 10 production-browser tests, a clean production dependency audit, and a successful production build. No complete deployment manifest, consensus lifecycle, source parity, or GEN payout receipt is claimed. The UI remains honest when deployment addresses are absent and shows no fabricated live bounties.
+This is a source package, **not** a complete predeployed application. The local evidence currently includes 53 deterministic contract tests, 11 exact-stack GenVM Direct Mode tests, full GenVM lint plus semantic validation for both contracts under the pinned `GENVM_VERSION=v0.3.0-rc7`, 14 frontend unit tests, 10 production-browser tests, a clean production dependency audit, and a successful production build. No complete deployment manifest, consensus lifecycle, source parity, or GEN payout receipt is claimed. The UI remains honest when deployment addresses are absent and shows no fabricated live bounties.
 
 ## Architecture
 
@@ -133,7 +133,7 @@ MIT licensed. See `LICENSE`.
 
 ## Adversarial and deployment evidence improvements (pre-deployment)
 
-- 51 deterministic unit checks and 11 exact-stack GenVM Direct Mode cases pass
+- 53 deterministic unit checks and 11 exact-stack GenVM Direct Mode cases pass
   locally. Direct Mode uses the pinned testing-suite and is separate from the
   unit harness; it covers the pinned runner's `Response.status` fetch path,
   malformed model neutrality, callback authorization, duplicate messages,

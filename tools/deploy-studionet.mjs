@@ -42,8 +42,11 @@ function matchTx(output) {
 }
 function confirmFinalized(hash) {
   const text=run(['receipt',hash,'--status','FINALIZED']);
-  const finalized=/status_name\s*[:=]\s*['"]FINALIZED['"]|txExecutionResultName\s*[:=]\s*['"]FINISHED_WITH_RETURN['"]|status\s*[:=]\s*5\b/i.test(text);
-  const successful=/leader_receipt[\s\S]{0,12000}execution_result\s*[:=]\s*['"]SUCCESS['"]|result_name\s*[:=]\s*['"]MAJORITY_AGREE['"]|last_round[\s\S]{0,4000}result\s*[:=]\s*6\b|txExecutionResultName\s*[:=]\s*['"]FINISHED_WITH_RETURN['"]|EXECUTION\s*(?:SUCCESS|SUCCEEDED)/i.test(text);
+  const finalized=/status_name["']?\s*[:=]\s*["']FINALIZED["']|txExecutionResultName["']?\s*[:=]\s*["']FINISHED_WITH_RETURN["']|status["']?\s*[:=]\s*7\b/i.test(text);
+  const leaderStart=text.search(/leader_receipt["']?\s*[:=]/i);
+  const leaderText=leaderStart >= 0 ? text.slice(leaderStart) : '';
+  const leaderMatch=leaderText.match(/execution_result\s*[:=]\s*["']([^"']+)["']/i);
+  const successful=(leaderMatch?.[1]||'').toUpperCase()==='SUCCESS' || /txExecutionResultName["']?\s*[:=]\s*["']FINISHED_WITH_RETURN["']/i.test(text);
   if(!finalized || !successful) {
     throw Error(`Unable to prove FINALIZED + GenVM success for ${hash}; inspect the receipt manually. No automatic retry.`);
   }

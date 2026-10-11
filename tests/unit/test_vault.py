@@ -1,6 +1,10 @@
 import pytest
 from tests.unit.conftest import VAULTMOD, MSG, EMISSIONS, TRANSFERS, VIEWS, SPONSOR, CLAIMANT, ATTACKER, ENGINE, VAULT, Address, UserError, commit
 
+def test_cli_address_constructor_is_normalized():
+    vault=VAULTMOD.PromiseVault(Address(ENGINE))
+    assert vault.engine.as_hex.lower()==ENGINE.lower()
+
 def test_funded_claim_frozen(published):
     c=published._require_case(1)
     assert c['commit']=='a'*40 and c['status']=='OPEN'

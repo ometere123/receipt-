@@ -12,3 +12,4 @@ frontend/.env.local
 receipt-deployment.manifest.json
 receipt-deployment.journal.json
 receipt-deployment.state.json
+receipt-deployment.failed-attempt.json

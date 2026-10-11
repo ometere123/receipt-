@@ -14,6 +14,12 @@ def source_setup():
     NETWORK[base+'src/fees.py']=types.SimpleNamespace(status=200,body=src)
     return case
 
+def test_cli_address_argument_is_normalized():
+    MSG.sender_address=Address(ENGINE);MSG.contract_address=Address(ENGINE)
+    engine=ENGINEMOD.ProofEngine();engine.verdicts={};engine.recovered={}
+    engine.bind_vault(Address(VAULT))
+    assert engine.get_vault().lower()==VAULT.lower()
+
 def test_only_bound_vault_may_assess(engine):
     case=source_setup(); MSG.sender_address=Address(SPONSOR);MSG.contract_address=Address(ENGINE)
     with pytest.raises(UserError,match='only bound'):

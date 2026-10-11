@@ -15,6 +15,11 @@ def _fail(message: str) -> None:
     raise gl.vm.UserError(message)
 
 
+def _address_text(value: str) -> str:
+    """Normalize CLI address arguments and Direct Mode strings alike."""
+    return value.as_hex if isinstance(value, Address) else str(value)
+
+
 def _clean_reason(value: str) -> str:
     return ' '.join(str(value).split())[:600]
 
@@ -67,9 +72,10 @@ class ProofEngine(gl.Contract):
     def bind_vault(self, vault_address: str) -> None:
         if gl.message.sender_address != self.owner or self.is_bound:
             _fail('one-time deployer binding only')
-        if not re.fullmatch(r'0x[0-9a-fA-F]{40}', vault_address):
+        vault_text = _address_text(vault_address)
+        if not re.fullmatch(r'0x[0-9a-fA-F]{40}', vault_text):
             _fail('invalid vault address')
-        self.vault = Address(vault_address)
+        self.vault = Address(vault_text)
         self.is_bound = True
         gl.get_contract_at(self.vault).emit(on='finalized').activate_engine()
 

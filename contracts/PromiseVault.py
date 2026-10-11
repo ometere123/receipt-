@@ -23,6 +23,11 @@ def _fail(message: str) -> None:
     raise gl.vm.UserError(message)
 
 
+def _address_text(value: str) -> str:
+    """Normalize CLI address arguments and Direct Mode strings alike."""
+    return value.as_hex if isinstance(value, Address) else str(value)
+
+
 def _now() -> int:
     return int(datetime.now(timezone.utc).timestamp())
 
@@ -71,7 +76,7 @@ class PromiseVault(gl.Contract):
     dispatches: TreeMap[str, str]
 
     def __init__(self, engine_address: str):
-        self.engine = Address(engine_address)
+        self.engine = Address(_address_text(engine_address))
         self.engine_ready = False
         self.case_count = u64(0)
         self.attempt_count = u64(0)
@@ -111,7 +116,7 @@ class PromiseVault(gl.Contract):
 
     @gl.public.view
     def get_credit(self, who: str) -> str:
-        return str(self.credits.get(Address(who), u256(0)))
+        return str(self.credits.get(Address(_address_text(who)), u256(0)))
 
     @gl.public.view
     def get_dispatch(self, dispatch_id: int) -> str:
