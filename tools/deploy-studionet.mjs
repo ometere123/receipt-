@@ -20,7 +20,8 @@ const safe = s=>s.replace(/\x1b\[[0-9;]*m/g,'');
 const readJson=p=>existsSync(p)?JSON.parse(readFileSync(p,'utf8')):{};
 const run=(args)=>{
   console.log(`\n> genlayer ${args.join(' ')}`);
-  const result=spawnSync(cli,args,{encoding:'utf8',timeout:480000,env:process.env});
+  const result=spawnSync(cli,args,{encoding:'utf8',timeout:480000,env:process.env,
+    shell:process.platform === 'win32'});
   const output=safe(`${result.stdout||''}\n${result.stderr||''}`);
   console.log(output.slice(0,12000));
   if(result.error)throw result.error;
