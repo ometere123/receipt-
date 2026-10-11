@@ -29,10 +29,12 @@ const SOURCE_PATH = 'contracts/PromiseVault.py';
 const CLAIM = 'For this validation case, an EOA `withdraw` keeps the account\'s claimable credit intact until the external GEN transfer has been confirmed.';
 const SOURCE_ANCHOR = 'self.credits[recipient] = u256(0)';
 const BAD_ANCHOR = '# EVM child is created after finalization.';
+const RESUME_CASE_ID = Number(process.env.RECEIPT_RESUME_CASE_ID || 0);
+const RESUME_CREATE_TX = process.env.RECEIPT_RESUME_CREATE_TX || '';
 
-if (existsSync(EVIDENCE_FILE)) throw new Error(`Refusing to overwrite ${EVIDENCE_FILE}; inspect the prior live run first.`);
-
-const evidence = {
+const priorEvidence = existsSync(EVIDENCE_FILE) ? JSON.parse(readFileSync(EVIDENCE_FILE, 'utf8')) : null;
+if (priorEvidence && priorEvidence.result !== 'BLOCKED') throw new Error(`Refusing to overwrite ${EVIDENCE_FILE}; inspect the prior live run first.`);
+const evidence = priorEvidence || {
   chain_id: CHAIN, rpc: RPC, repository_commit: COMMIT,
   deployment: manifest, sponsor_account: SPONSOR_NAME,
   challenger_account: CHALLENGER_NAME, cases: [], unauthorized: [], replay: [],
@@ -44,14 +46,18 @@ function plain(value) {
 function assertFinal(receipt, label) {
   const status = String(receipt.statusName || receipt.status || '').toUpperCase();
   const result = String(receipt.txExecutionResultName || '').toUpperCase();
-  if (status !== 'FINALIZED' || result !== 'FINISHED_WITH_RETURN') {
+  const leader = receipt.consensus_data?.leader_receipt?.find(item => item.mode === 'leader') || receipt.consensus_data?.leader_receipt?.[0];
+  const leaderSuccess = String(leader?.execution_result || '').toUpperCase() === 'SUCCESS';
+  if (status !== 'FINALIZED' && status !== '7' || (result && result !== 'FINISHED_WITH_RETURN') || (!result && !leaderSuccess)) {
     throw new Error(`${label} was not successful: ${status} / ${result}`);
   }
 }
 function assertFailed(receipt, label) {
   const status = String(receipt.statusName || receipt.status || '').toUpperCase();
   const result = String(receipt.txExecutionResultName || '').toUpperCase();
-  if (status !== 'FINALIZED' || result !== 'FINISHED_WITH_ERROR') {
+  const leader = receipt.consensus_data?.leader_receipt?.find(item => item.mode === 'leader') || receipt.consensus_data?.leader_receipt?.[0];
+  const leaderError = String(leader?.execution_result || '').toUpperCase() === 'ERROR';
+  if (status !== 'FINALIZED' && status !== '7' || (result && result !== 'FINISHED_WITH_ERROR') || (!result && !leaderError)) {
     throw new Error(`${label} did not produce the expected finalized rejection: ${status} / ${result}`);
   }
 }
@@ -175,7 +181,16 @@ async function main() {
     save();
   }
 
-  const positive = await createCase('positive contradiction');
+  let positive;
+  if (RESUME_CASE_ID) {
+    if (!RESUME_CREATE_TX) throw new Error('RECEIPT_RESUME_CREATE_TX is required with RECEIPT_RESUME_CASE_ID.');
+    const state = await readJSON(readClient, VAULT, 'get_case', [RESUME_CASE_ID]);
+    if (state.status !== 'OPEN' || state.active_attempt) throw new Error(`Resume case ${RESUME_CASE_ID} is not still open and attempt-free.`);
+    positive = { label: 'positive contradiction', id: RESUME_CASE_ID, create: { hash: RESUME_CREATE_TX }, initial: state, bounty_wei: BOUNTY.toString(), bond_wei: BOND.toString() };
+    evidence.cases.push(positive); save();
+  } else {
+    positive = await createCase('positive contradiction');
+  }
   await commitAndReveal(positive, 'positive', SOURCE_ANCHOR,
     'The frozen code contradicts the published claim: withdraw clears the credit before it emits the external transfer, and the dispatch is explicitly EMITTED_UNCONFIRMED.');
   if (positive.final_attempt.verdict !== 'CONTRADICTED' || positive.final_case.status !== 'WON') throw new Error(`Positive case did not settle as CONTRADICTED/WON: ${positive.final_attempt.verdict}/${positive.final_case.status}`);
