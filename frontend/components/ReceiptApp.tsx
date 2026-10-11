@@ -10,11 +10,12 @@ import {
 } from 'lucide-react';
 import {
   addrShort, bondFor, CaseDraft, CHAIN_ID, commitHash, ENGINE, EXPLORER,
+  FUNDING_ENABLED,
   genToWei, hasDeployment, loadEvidence, ReceiptAttempt, ReceiptCase,
   relativeDate, statusLabel, validateDraft, VAULT, weiToGen,
 } from '@/lib/domain';
 import {
-  attemptById, attemptsPage, caseById, caseCounts, casesPage, creditOf,
+  attemptById, attemptsPage, caseById, caseCounts, casesPage, creditOf, vaultConfig,
   injected, walletAddress, write,
 } from '@/lib/chain';
 import { dropReveal, getReveals, saveReveal } from '@/lib/local';
@@ -90,20 +91,22 @@ export default function ReceiptApp() {
     catch { /* noncritical device storage */ }
   }, [txs]);
   const [credit, setCredit] = useState<bigint>(0n);
+  const [fundingEnabled, setFundingEnabled] = useState(false);
   const refreshSeq = useRef(0);
   const networkReady = chain === CHAIN_ID;
   const loadAll = useCallback(async () => {
-    if (!hasDeployment()) return;
+    if (!hasDeployment()) { setFundingEnabled(false); return; }
     const seq = ++refreshSeq.current;
     setLoading(true);
     try {
-      const totals = await caseCounts();
+      const [config, totals] = await Promise.all([vaultConfig(), caseCounts()]);
       const caseChunks = await Promise.all(Array.from({length: Math.min(8, Math.ceil(totals.cases / 24))}, (_, i) => casesPage(Math.max(0, totals.cases - (i+1) * 24), Math.min(24, totals.cases - Math.max(0, totals.cases - (i+1) * 24)) )));
       const attemptChunks = await Promise.all(Array.from({length: Math.min(8, Math.ceil(totals.attempts / 24))}, (_, i) => attemptsPage(Math.max(0, totals.attempts - (i+1) * 24), Math.min(24, totals.attempts - Math.max(0, totals.attempts - (i+1) * 24)) )));
       if (seq !== refreshSeq.current) return;
       setCases(caseChunks.flat().sort((a,b) => b.id - a.id));
       setAttempts(attemptChunks.flat().sort((a,b) => b.id - a.id));
       setCount(totals);
+      setFundingEnabled(FUNDING_ENABLED && config.funding_enabled === true);
       if (account) setCredit(await creditOf(account));
       setError('');
     } catch (e) { if (seq === refreshSeq.current) setError((e as Error).message); }
@@ -188,10 +191,11 @@ export default function ReceiptApp() {
       <main className="container main">
         {!hasDeployment() && <div className="notice notice-warn"><CircleAlert size={19}/><span><strong>Deployment not configured.</strong> This is the real application, not a simulated chain. Supply both deployed contract addresses in <code>frontend/.env.local</code> to load and transact with cases.</span></div>}
         {account && !networkReady && <div className="notice notice-warn"><CircleAlert size={19}/><span>Wallet connected to chain {chain ?? 'unknown'}. Writes are blocked until Studionet 61999 is selected.</span><button onClick={switchNetwork} className="btn btn-ink btn-small">Switch network</button></div>}
+        {hasDeployment() && !fundingEnabled && <div className="notice notice-warn"><CircleAlert size={19}/><span><strong>Live funding is paused.</strong> The external GEN transfer failure/recovery path is not proven. Existing finalized credits remain visible, but new bounties cannot be created safely.</span></div>}
         {error && <div role="alert" className="notice notice-error"><CircleAlert size={18}/><span>{error}</span><button aria-label="Dismiss error" onClick={()=>setError('')}><X size={17}/></button></div>}
         {tab === 'explore' && <>
           <section className="hero">
-            <div className="hero-copy"><div className="hero-kicker"><span className="pulse-disc"/><span>THE OPEN-SOURCE PROOF CLUB</span><Sparkles size={15}/></div><h1>Big promises.<br/><span>Real proof.</span><br/>No excuses<span className="punct">.</span></h1><p>Software projects make claims. We put those claims under a magnifying glass—and put real GEN behind the truth.</p><div className="hero-buttons"><button className="btn btn-ink" onClick={()=>document.querySelector('#browse-cases')?.scrollIntoView({behavior:'smooth'})}><Search size={18}/> Find a case <ArrowUpRight size={18}/></button><button className="btn btn-outline" onClick={()=>setTab('create')}>Fund a promise <ArrowRight size={18}/></button></div><div className="hero-notes"><span><BadgeCheck size={17}/> Exact commits</span><span><ShieldCheck size={17}/> Independent verdicts</span><span><Wallet size={17}/> GEN rewards</span></div></div>
+            <div className="hero-copy"><div className="hero-kicker"><span className="pulse-disc"/><span>THE OPEN-SOURCE PROOF CLUB</span><Sparkles size={15}/></div><h1>Big promises.<br/><span>Real proof.</span><br/>No excuses<span className="punct">.</span></h1><p>Software projects make claims. We put those claims under a magnifying glass—and put real GEN behind the truth.</p><div className="hero-buttons"><button className="btn btn-ink" onClick={()=>document.querySelector('#browse-cases')?.scrollIntoView({behavior:'smooth'})}><Search size={18}/> Find a case <ArrowUpRight size={18}/></button><button className="btn btn-outline" onClick={()=>setTab('create')}>{fundingEnabled ? 'Fund a promise' : 'Review funding gate'} <ArrowRight size={18}/></button></div><div className="hero-notes"><span><BadgeCheck size={17}/> Exact commits</span><span><ShieldCheck size={17}/> Independent verdicts</span><span><Wallet size={17}/> GEN rewards</span></div></div>
             <div className="hero-art" aria-label="Illustrated receipt and investigator"><div className="art-orbit orbit-a"/><div className="art-orbit orbit-b"/><div className="sparkle-shape spark-a">✳</div><div className="sparkle-shape spark-b">✦</div><div className="art-receipt"><div className="receipt-top">RECEIPT! <span>№ 001</span></div><div className="receipt-logo">CASE <span>FILE</span></div><div className="receipt-lines"><i/><i/><i/></div><div className="receipt-highlight"><Check size={19}/> SOURCE VERIFIED</div><div className="receipt-bottom">PROMISE ≠ PROOF</div></div><div className="art-glass"><Search size={100} strokeWidth={2.8}/></div><span className="art-sticker sticker-one">100%<br/>CURIOUS</span><span className="art-sticker sticker-two">✴ PROOF<br/>PLEASE!</span><div className="art-shadow"/></div>
           </section>
           <section className="steps-strip" aria-label="Three simple steps"><div><span className="step-num">01</span><strong>Find the claim</strong><small>Pick an open case</small></div><div className="steps-arrow"><ArrowRight/></div><div><span className="step-num">02</span><strong>Bring the code</strong><small>Pin down the contradiction</small></div><div className="steps-arrow"><ArrowRight/></div><div><span className="step-num">03</span><strong>Get the receipt</strong><small>Validators decide, you collect</small></div></section>
@@ -200,9 +204,9 @@ export default function ReceiptApp() {
             {loading && cases.length === 0 ? <div className="empty-state"><RefreshCcw className="spin" size={31}/><h3>Loading finalized cases…</h3></div> : visible.length ? <div className="case-grid">{visible.map((c,i)=><div key={c.id} className={`case-hue hue-${i%4}`}><CaseCard c={c} now={now} onSelect={()=>setSelected(c)}/></div>)}</div> : <div className="empty-state"><FolderSearch size={50}/><h3>No cases on the board yet.</h3><p>{query || statusFilter !== 'ALL' ? 'Try another search or filter.' : 'The first funded, verified case will appear here. No demo data pretending to be real.'}</p><button className="btn btn-ink" onClick={()=>setTab('create')}><Plus size={17}/> Fund the first claim</button></div>}
             {count.cases > 192 && <p className="footnote">Showing the 192 newest cases. Older cases remain available through direct contract pagination.</p>}
           </section>
-          <section className="bottom-banner"><div><span className="eyebrow">HAVE A PROMISE WORTH TESTING?</span><h2>Put your GEN where your docs are.</h2><p>Anyone can sponsor a challenge. The source and reward get locked before the investigation begins.</p></div><button className="btn btn-dark" onClick={()=>setTab('create')}>Start a case <ArrowUpRight size={18}/></button><span className="banner-star">✱</span></section>
+          <section className="bottom-banner"><div><span className="eyebrow">HAVE A PROMISE WORTH TESTING?</span><h2>{fundingEnabled ? 'Put your GEN where your docs are.' : 'Funding is paused until payouts are safe.'}</h2><p>{fundingEnabled ? 'Anyone can sponsor a challenge. The source and reward get locked before the investigation begins.' : 'Existing receipts remain readable. New bounties stay disabled until external GEN receipt recovery is proven.'}</p></div><button className="btn btn-dark" onClick={()=>setTab('create')}>{fundingEnabled ? 'Start a case' : 'Review funding gate'} <ArrowUpRight size={18}/></button><span className="banner-star">✱</span></section>
         </>}
-        {tab === 'create' && <CreateView account={account} canWrite={hasDeployment() && networkReady} connect={connect} runTx={runTx} refresh={loadAll} openExplore={()=>setTab('explore')}/>}
+        {tab === 'create' && <CreateView account={account} canWrite={hasDeployment() && networkReady} fundingEnabled={fundingEnabled} connect={connect} runTx={runTx} refresh={loadAll} openExplore={()=>setTab('explore')}/>}
         {tab === 'desk' && <DeskView account={account} canWrite={hasDeployment() && networkReady} attempts={attempts} cases={cases} credit={credit} connect={connect} runTx={runTx} refresh={loadAll} loadOlder={loadOlder} hasOlder={cases.length < count.cases || attempts.length < count.attempts} select={setSelected}/>}
         {tab === 'wall' && <section className="content-section"><div className="section-head"><div><span className="eyebrow">PUBLICLY VERIFIABLE OUTCOMES</span><h2>The receipt <span className="scribble">wall.</span></h2><p>No popularity scores or unverified badges. Only genuine settlement results.</p></div><div className="floating-icon"><BadgeCheck size={33}/></div></div>{won.length ? <div className="case-grid">{won.map((c,i)=><div className={`case-hue hue-${i%4}`} key={c.id}><CaseCard c={c} now={now} onSelect={()=>setSelected(c)}/></div>)}</div> : <div className="empty-state"><BadgeCheck size={50}/><h3>Waiting for the first verified receipt.</h3><p>The wall fills only after a challenge is finalized as CONTRADICTED.</p></div>}</section>}
         {tab === 'about' && <AboutView openCreate={()=>setTab('create')} />}
@@ -214,7 +218,7 @@ export default function ReceiptApp() {
   </>;
 }
 
-function CreateView({account,canWrite,connect,runTx,refresh,openExplore}: {account:string;canWrite:boolean;connect:()=>void;runTx:(label:string,fn:(u:(s:string,h?:string)=>void)=>Promise<string>)=>Promise<string>;refresh:()=>Promise<void>;openExplore:()=>void}) {
+function CreateView({account,canWrite,fundingEnabled,connect,runTx,refresh,openExplore}: {account:string;canWrite:boolean;fundingEnabled:boolean;connect:()=>void;runTx:(label:string,fn:(u:(s:string,h?:string)=>void)=>Promise<string>)=>Promise<string>;refresh:()=>Promise<void>;openExplore:()=>void}) {
   const [draft, setDraft] = useState<CaseDraft>(EMPTY_DRAFT);
   const [verified, setVerified] = useState<{ doc_digest:string;source_digest:string; doc:string; source:string } | null>(null);
   const [checking, setChecking] = useState(false);
@@ -230,6 +234,7 @@ function CreateView({account,canWrite,connect,runTx,refresh,openExplore}: {accou
     catch(e){setError((e as Error).message);} finally{setChecking(false);}
   };
   const publish = async () => {
+    if (!fundingEnabled) { setError('Live funding is paused until external GEN receipt recovery is proven.'); return; }
     if (!verified || !canWrite || !account) return;
     setBusy(true); setError('');
     try { await runTx('Fund documentation promise', u => write('create_case', [draft.title,draft.owner,draft.repo,draft.commit,draft.doc_path,draft.source_path,draft.claim,verified.doc_digest,verified.source_digest,draft.duration_hours],account,genToWei(draft.bounty),u));
@@ -238,10 +243,11 @@ function CreateView({account,canWrite,connect,runTx,refresh,openExplore}: {accou
   };
   return <section className="content-section create-layout"><div className="create-intro"><span className="eyebrow">THE PROMISE WORKSHOP</span><h1>Put a promise<br/><span className="scribble">on the record.</span></h1><p>Lock the exact documentation claim, its source files and the GEN bounty. Independent challengers will bring receipts.</p><div className="guide-card"><div className="guide-icon"><Fingerprint size={30}/></div><h3>Immutable means immutable.</h3><p>No branches, moving tags or pasted snippets. Every claim is pinned to the exact 40-character Git commit and SHA-256 fingerprints for both files.</p></div></div>
     <div className="form-card"><div className="form-steps"><span className={phase>=1?'current':''}>1. The claim</span><ArrowRight size={16}/><span className={phase>=2?'current':''}>2. Git evidence</span><ArrowRight size={16}/><span className={phase>=3?'current':''}>3. Fund</span></div><div className="form-body">
+    {!fundingEnabled && <div className="notice notice-warn"><CircleAlert size={19}/><span><strong>Funding is technically disabled.</strong> You can inspect the workflow and existing receipts, but this deployment will not accept new bounties until external GEN transfer recovery is proven.</span></div>}
     <h2>{phase===1?'What promise are we testing?':phase===2?'Pin the actual release.':'One last evidence check.'}</h2>
     {phase===1 && <div className="form-grid"><Field label="Case name"><input placeholder="The fee ceiling" maxLength={88} value={draft.title} onChange={e=>set('title',e.target.value)}/></Field><Field label="Exact published claim" hint="Copy the exact statement, including punctuation, from the documentation."><textarea rows={5} maxLength={480} placeholder="The protocol cannot charge users more than 2%..." value={draft.claim} onChange={e=>set('claim',e.target.value)}/></Field><Field label="Bounty in GEN"><input value={draft.bounty} inputMode="decimal" onChange={e=>set('bounty',e.target.value)} /></Field><Field label="Challenge duration (hours)"><input type="number" min={6} max={720} value={draft.duration_hours} onChange={e=>set('duration_hours',Number(e.target.value))}/></Field><button className="btn btn-dark full" onClick={()=>setPhase(2)} disabled={draft.title.trim().length < 8 || draft.claim.length < 25}>Next: Git evidence <ArrowRight size={18}/></button></div>}
     {phase===2 && <div className="form-grid"><div className="two-fields"><Field label="GitHub owner"><input value={draft.owner} placeholder="example-org" onChange={e=>set('owner',e.target.value)}/></Field><Field label="Repository"><input value={draft.repo} placeholder="example-protocol" onChange={e=>set('repo',e.target.value)}/></Field></div><Field label="Full Git commit (40 lowercase hex)"><input className="mono-input" spellCheck={false} value={draft.commit} maxLength={40} placeholder="a123... exact 40-character SHA" onChange={e=>set('commit',e.target.value.toLowerCase())}/></Field><Field label="Documentation path"><input value={draft.doc_path} placeholder="docs/fees.md" onChange={e=>set('doc_path',e.target.value)}/></Field><Field label="Source code path"><input value={draft.source_path} placeholder="src/fees.py" onChange={e=>set('source_path',e.target.value)}/></Field><div className="button-row"><button className="btn btn-outline" onClick={()=>setPhase(1)}><ArrowLeft size={16}/> Back</button><button className="btn btn-dark" disabled={Boolean(invalid)||checking} onClick={()=>void verify()}>{checking?'Reading pinned files…':'Verify source files'} <ScanEye size={18}/></button></div>{invalid && <small className="validation-tip">{invalid}</small>}</div>}
-    {phase===3 && verified && <div className="form-grid"><div className="verified-box"><BadgeCheck size={25}/><div><strong>Files verified in this browser</strong><p>The claim was found verbatim. Digests will be re-checked independently by GenLayer validators during any challenge.</p></div></div><div className="digest-line"><span>Documentation SHA-256</span><code>{verified.doc_digest}</code></div><div className="digest-line"><span>Source SHA-256</span><code>{verified.source_digest}</code></div><div className="summary-grid"><div><small>REWARD</small><strong>{draft.bounty} GEN</strong></div><div><small>CHALLENGE WINDOW</small><strong>{draft.duration_hours} hours</strong></div></div><p className="help-text">Publishing sends the bounty into PromiseVault. If no qualifying challenge wins, it becomes refundable after expiry. While a submitted challenge is pending, the funds remain reserved.</p><div className="button-row"><button className="btn btn-outline" onClick={()=>setPhase(2)}>Edit source</button>{account?<button className="btn btn-dark" disabled={busy||!canWrite} onClick={()=>void publish()}><LockKeyhole size={16}/>{busy?'Submitting…':'Fund & publish'}</button>:<button className="btn btn-dark" onClick={connect}><Wallet size={16}/>Connect to fund</button>}</div></div>}
+    {phase===3 && verified && <div className="form-grid"><div className="verified-box"><BadgeCheck size={25}/><div><strong>Files verified in this browser</strong><p>The claim was found verbatim. Digests will be re-checked independently by GenLayer validators during any challenge.</p></div></div><div className="digest-line"><span>Documentation SHA-256</span><code>{verified.doc_digest}</code></div><div className="digest-line"><span>Source SHA-256</span><code>{verified.source_digest}</code></div><div className="summary-grid"><div><small>REWARD</small><strong>{draft.bounty} GEN</strong></div><div><small>CHALLENGE WINDOW</small><strong>{draft.duration_hours} hours</strong></div></div><p className="help-text">{fundingEnabled ? 'Publishing sends the bounty into PromiseVault. If no qualifying challenge wins, it becomes refundable after expiry. While a submitted challenge is pending, the funds remain reserved.' : 'The evidence is ready for inspection, but new funding is disabled until external GEN receipt recovery is proven.'}</p><div className="button-row"><button className="btn btn-outline" onClick={()=>setPhase(2)}>Edit source</button>{fundingEnabled ? (account?<button className="btn btn-dark" disabled={busy||!canWrite} onClick={()=>void publish()}><LockKeyhole size={16}/>{busy?'Submitting…':'Fund & publish'}</button>:<button className="btn btn-dark" onClick={connect}><Wallet size={16}/>Connect to fund</button>) : <button className="btn btn-outline" disabled><LockKeyhole size={16}/>Funding paused</button>}</div></div>}
     {error && <div className="form-error" role="alert"><CircleAlert size={17}/>{error}</div>}
     </div></div>
   </section>;

@@ -6,7 +6,7 @@ The product has a custom, responsive **detective-club UI** with a case board, cl
 
 ## Status and verification boundaries
 
-The current source includes 53 deterministic contract tests, 11 exact-stack GenVM Direct Mode tests, full GenVM lint plus semantic validation for both contracts under the pinned `GENVM_VERSION=v0.3.0-rc7`, 14 frontend unit tests, 10 production-browser tests, a clean production dependency audit, and a successful production build. A real Studionet deployment, exact source parity, finalized two-wallet lifecycle, and one independently observed EVM payout receipt are recorded in [`docs/LIVE_VALIDATION.md`](docs/LIVE_VALIDATION.md). **Live funding remains BLOCKED** because the external-transfer failure/recovery path is not proven; the UI must not be treated as an economic-safety certification.
+The current source includes 55 deterministic contract tests, 13 exact-stack GenVM Direct Mode tests, full GenVM lint plus semantic validation for both contracts under the pinned `GENVM_VERSION=v0.3.0-rc7`, 14 frontend unit tests, 10 production-browser tests, a clean production dependency audit, and a successful production build. A real Studionet deployment, exact source parity, finalized two-wallet lifecycle, and one independently observed EVM payout receipt are recorded in [`docs/LIVE_VALIDATION.md`](docs/LIVE_VALIDATION.md). **Live funding remains BLOCKED** because the external-transfer failure/recovery path is not proven; the UI and replacement contract now enforce a funding-off default, but this is not an economic-safety certification.
 
 ## Architecture
 
@@ -62,6 +62,7 @@ npm run dev
 ```
 
 The frontend at `http://localhost:3000` displays a visible **deployment not configured** notice until both deployed addresses are present. This is intentional: it does not substitute fictional data.
+`NEXT_PUBLIC_FUNDING_ENABLED` defaults to `false`; the UI also reads the vault's on-chain `funding_enabled` flag, so both gates must be explicitly true before a new bounty can be submitted. The replacement `PromiseVault` constructor intentionally defaults that flag to false and has no public enable switch. Existing case records, challenge flows and credits remain readable; withdrawal is still labeled `EMITTED_UNCONFIRMED`.
 
 ## 61999 deployment (real transactions)
 
@@ -73,7 +74,7 @@ npm run deploy:61999 -- --deploy
 
 On a fully successful run it writes gitignored `receipt-deployment.manifest.json` and `frontend/.env.local`. If the exact CLI formatting or final execution status cannot be safely parsed, deployment halts and preserves the journal; **inspect the corresponding transaction instead of retrying blindly**. Do not put mnemonic/private keys in `.env.local`, the source tree or a public repo.
 
-After deployment, independently verify each contract source by `npm run cli -- code <address>`, both transaction receipts, and the binding via `npm run cli -- call <engine_address> get_vault`. Confirm actual successful settlement before trusting the GEN payout path.
+After deployment, independently verify each contract source by `npm run cli -- code <address>`, both transaction receipts, and the binding via `npm run cli -- call <engine_address> get_vault`. Confirm actual successful settlement before trusting the GEN payout path. Do not deploy a replacement contract or spend GEN for this repository without fresh explicit authorization; the current experimental deployment predates the contract-side funding default and remains restricted by the production frontend gate.
 
 ## First genuine case
 
@@ -133,7 +134,7 @@ MIT licensed. See `LICENSE`.
 
 ## Adversarial and deployment evidence improvements
 
-- 53 deterministic unit checks and 11 exact-stack GenVM Direct Mode cases pass
+- 55 deterministic unit checks and 13 exact-stack GenVM Direct Mode cases pass
   locally. Direct Mode uses the pinned testing-suite and is separate from the
   unit harness; it covers the pinned runner's `Response.status` fetch path,
   malformed model neutrality, callback authorization, duplicate messages,
@@ -144,6 +145,9 @@ MIT licensed. See `LICENSE`.
   layout.
 - Bind => `activate_engine` is a finalized asynchronous handshake. Funding is
   blocked until `PromiseVault.get_config.engine_ready == true`.
+- Replacement `PromiseVault` constructors also set `funding_enabled = false`;
+  `create_case` rejects funding until a separately reviewed custody policy is
+  available. There is no public contract method to turn it on.
 - `npm run source:verify` refuses to claim parity without a real deployment
   manifest and retrieves on-chain source using finalized GenLayer RPC.
 - `/api/build-info` reports commit and deployment metadata ONLY if supplied
@@ -156,6 +160,10 @@ MIT licensed. See `LICENSE`.
   remains unresolved. A dispatch ledger does NOT solve it. This package MUST
   NOT be marketed as economically production-safe until a live failure and
   success study establishes the operational boundary.
+- The live deployment recorded below is the older `de3cd57...` source, so its
+  contract state does not contain the replacement funding gate. Production
+  currently uses `NEXT_PUBLIC_FUNDING_ENABLED=false` and the frontend warning
+  to prevent new funding against that experimental deployment.
 - Current deployment addresses, transaction hashes, exact source digests and
   the complete recorded two-wallet lifecycle are in
   [`docs/LIVE_VALIDATION.md`](docs/LIVE_VALIDATION.md). That document preserves

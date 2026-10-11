@@ -1,3 +1,4 @@
+import json
 import pytest
 from tests.unit.conftest import VAULTMOD, MSG, EMISSIONS, TRANSFERS, VIEWS, SPONSOR, CLAIMANT, ATTACKER, ENGINE, VAULT, Address, UserError, commit
 
@@ -203,6 +204,14 @@ def test_funding_requires_finalized_engine_activation(vault):
         vault.create_case('The fee ceiling','demo','fees','a'*40,'docs/fees.md','src/fees.py',
             'Our protocol never exceeds a 2% distribution fee.','0'*64,'1'*64,72)
     assert vault.get_counts()=='{"attempts":0,"cases":0}'
+
+def test_replacement_vault_blocks_funding_by_default(vault, engine):
+    MSG.value=10**18
+    with pytest.raises(UserError, match='live funding disabled'):
+        vault.create_case('The fee ceiling','demo','fees','a'*40,'docs/fees.md','src/fees.py',
+            'Our protocol never exceeds a 2% distribution fee.','0'*64,'1'*64,72)
+    assert vault.get_counts()=='{"attempts":0,"cases":0}'
+    assert json.loads(vault.get_config())['funding_enabled'] is False
 
 
 def test_only_bound_engine_may_activate(vault):

@@ -66,6 +66,17 @@ def test_malformed_model_response_refunds_bond_neutrally(engine, response):
     assert record['verdict']=='INCONCLUSIVE'
     assert record['digest']==''
 
+def test_incoherent_not_established_flags_are_neutral(engine):
+    case=source_setup();MSG.sender_address=Address(VAULT);MSG.contract_address=Address(ENGINE)
+    GL.nondet.response={'verdict':'NOT_ESTABLISHED','scope_ok':True,
+                        'proof_complete':True,'contradiction':True,
+                        'reason':'Contradiction flag conflicts with neutral label.'}
+    engine.assess(12,7,json.dumps(case),'MAX_FEE_BPS = 500',
+                  'The bounded source argument is deliberately incoherent.')
+    record=json.loads(engine.get_verdict(12))
+    assert record['verdict']=='INCONCLUSIVE'
+    assert record['digest']==''
+
 def test_missing_source_anchor_is_out_of_scope(engine):
     case=source_setup();MSG.sender_address=Address(VAULT);MSG.contract_address=Address(ENGINE)
     engine.assess(12,7,json.dumps(case),'SOME_MISSING_ANCHOR','The contract stores a different value; missing anchor is suspicious.')

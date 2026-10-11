@@ -4,6 +4,13 @@ This is an evidence record for the current Studionet deployment. It is not an
 economic-safety certification. The external GEN-transfer failure path remains
 unproven, so live funding is explicitly **BLOCKED**.
 
+The parity and lifecycle evidence below records the older `de3cd57...`
+candidate. The working-tree replacement contract now adds a default-off
+`funding_enabled` gate and coherent verdict normalization, but no replacement
+contract was deployed because fresh authorization for that irreversible action
+was not provided. The production frontend is separately configured with
+`NEXT_PUBLIC_FUNDING_ENABLED=false` and also reads the on-chain gate.
+
 ## Network and deployment
 
 - RPC: `https://studio.genlayer.com/api`
@@ -23,7 +30,8 @@ FINALIZED with successful leader execution. `get_config` reports
 
 ## Deployed-source parity
 
-`npm run source:verify` passed with exact byte equality for both contracts:
+At commit `de3cd57cf3301b2f8dca0e3cec5f9bb539b1b52c`, `npm run source:verify`
+passed with exact byte equality for both deployed contracts:
 
 | File | SHA-256 |
 | --- | --- |
@@ -77,6 +85,14 @@ does not treat a noisy balance delta as a substitute for the EVM receipt.
 | 4, supported claim | `NOT_ESTABLISHED` / `OPEN`; the challenger bond was credited to the sponsor and no bounty winner was assigned | create `0x8875a6c0a72c1166ed862ae4572c1e9ff0a47cddc64d51038bea3220f09cb30f`, commit `0x9663191401ae0ad08bba3536e2e27c3588867d638517d12caf7ad508aad5cdb6`, reveal `0x0a7a3c40e245090bcbf47218d41bf9887340c78f6cdb7747429dc3fe8547c2e0` |
 | 5, invalid source digest | `INCONCLUSIVE` / `OPEN`; the challenger bond was refunded and no bounty winner was assigned | create `0x60334a832bbd03b821d5fe4853264cdaaaa4cbe2185610d2326d1318c33577c1`, commit `0x1897b767bec0a274d2273a38c50d086bfed5adcabe51b1a0e9c6ab6cce3a855`, reveal `0x5f890b898fa4c1e44053777ffc304c53a904bc686147e4319d9e1ebd667ec759` |
 
+Case 3 is still pending on-chain. A read-only `get_attempt(3)` at the
+validation checkpoint returned `PENDING` with `revealed_at = 1791750192`
+(`2026-10-11T20:23:12Z`) and no verdict. The assessment child was canceled
+with `NO_MAJORITY`; no recovery write was attempted. The earliest supported
+recovery request is therefore `2026-10-18T20:23:12Z`, after the seven-day
+window, and it still would not itself release credit: the engine must confirm
+an absent verdict through its finalized recovery path.
+
 Case 4's finalized ProofEngine child was
 `0x9dd07a6df79cf71e759bcce0f611e47826ce6e62b0364eac9cc27437c034eef4`,
 with callback `0x0a7556eef4fbf8ecbabd1b6ce85e78eed951e4cafa13e6484213707a922d9e41`.
@@ -97,3 +113,10 @@ supported compensation/recovery policy is independently demonstrated.
 The authoritative local evidence is the gitignored
 `receipt-live-lifecycle.json`; it records `BLOCKED`, required lifecycle
 success, and the unresolved case 3 rather than hiding either limitation.
+
+The replacement source fixes two source-level hazards and is covered by local
+unit/Direct Mode tests: funding is disabled by default, and incoherent
+`NOT_ESTABLISHED`/`OUT_OF_SCOPE` flag combinations become neutral
+`INCONCLUSIVE` results so a challenger bond is refunded. Those fixes are not
+live on the older addresses until an authorized replacement deployment is
+performed and source parity is re-established.

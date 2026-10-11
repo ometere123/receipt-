@@ -23,6 +23,7 @@ function parseJSON<T>(response: unknown): T {
   throw new Error('Unexpected contract read response.');
 }
 export async function caseCounts() { return parseJSON<{ cases: number; attempts: number }>(await read('get_counts')); }
+export async function vaultConfig() { return parseJSON<{ engine_ready?: boolean; funding_enabled?: boolean; withdrawal_status?: string }>(await read('get_config')); }
 export async function casesPage(offset = 0, limit = 24) { return parseJSON<ReceiptCase[]>(await read('list_cases', [offset, limit])); }
 export async function caseById(id: number) { const r = await read('get_case', [id]); return r ? parseJSON<ReceiptCase>(r) : null; }
 export async function attemptById(id: number) { const r = await read('get_attempt', [id]); return r ? parseJSON<ReceiptAttempt>(r) : null; }

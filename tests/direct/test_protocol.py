@@ -88,6 +88,9 @@ def _activated_vault(direct_vm, direct_deploy, direct_alice):
     direct_vm.sender = direct_alice
     direct_vm.origin = direct_alice
     vault.activate_engine()
+    # Test-only state opt-in: production constructors intentionally keep
+    # funding disabled because external GEN receipt recovery is unproven.
+    vault.funding_enabled = True
     return vault, vault_address
 
 
@@ -137,6 +140,34 @@ def test_unconfigured_vault_rejects_funding_without_child_activation(direct_vm, 
                       'docs/fees.md', 'src/fees.py',
                       'Our protocol never exceeds a 2% distribution fee.',
                       '0'*64, '1'*64, 72)
+
+def test_activated_replacement_vault_keeps_funding_disabled(direct_vm, direct_deploy, direct_alice):
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    direct_vm._chain_id = 61999
+    v = direct_deploy('contracts/PromiseVault.py', _addr(direct_alice))
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    v.activate_engine()
+    direct_vm.value = 10 ** 18
+    with direct_vm.expect_revert('live funding disabled'):
+        v.create_case('Frozen fee statement', 'demo', 'fees', 'a'*40,
+                      'docs/fees.md', 'src/fees.py',
+                      'Our protocol never exceeds a 2% distribution fee.',
+                      '0'*64, '1'*64, 72)
+
+def test_incoherent_neutral_flags_are_not_a_bond_forfeit(direct_vm, direct_deploy, direct_alice):
+    engine = _engine(direct_vm, direct_deploy, direct_alice)
+    _, _, payload = _payload(direct_vm, engine, direct_alice, response={
+        'verdict': 'NOT_ESTABLISHED', 'scope_ok': True,
+        'proof_complete': True, 'contradiction': True,
+        'reason': 'Contradiction flag conflicts with neutral label.'})
+    direct_vm.sender = direct_alice
+    engine.assess(1, 1, json.dumps(payload), 'MAX_FEE_BPS = 500',
+                  'The bounded source argument is deliberately incoherent.')
+    record = json.loads(engine.get_verdict(1))
+    assert record['verdict'] == 'INCONCLUSIVE'
+    assert record['digest'] == ''
 
 
 def test_validator_rejects_forged_success_after_independent_web_fetch(direct_vm, direct_deploy, direct_alice):

@@ -29,6 +29,9 @@ export const CHAIN_ID = 61999;
 export const VAULT = (process.env.NEXT_PUBLIC_PROMISE_VAULT_ADDRESS || '').trim() as `0x${string}`;
 export const ENGINE = (process.env.NEXT_PUBLIC_PROOF_ENGINE_ADDRESS || '').trim() as `0x${string}`;
 export const EXPLORER = (process.env.NEXT_PUBLIC_EXPLORER_URL || 'https://explorer-studio.genlayer.com').replace(/\/$/, '');
+// Funding is opt-in even when addresses are configured. The replacement
+// vault also reports this gate on-chain; both must explicitly allow funding.
+export const FUNDING_ENABLED = process.env.NEXT_PUBLIC_FUNDING_ENABLED === 'true';
 export const isAddress = (s: string): s is `0x${string}` => /^0x[0-9a-fA-F]{40}$/.test(s);
 export const hasDeployment = () => isAddress(VAULT) && isAddress(ENGINE);
 export const addrShort = (s: string) => s ? `${s.slice(0, 6)}…${s.slice(-4)}` : '—';

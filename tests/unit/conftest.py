@@ -159,6 +159,11 @@ def engine():
 
 @pytest.fixture
 def published(vault, engine):
+    # The production-safe contract defaults to funding disabled because
+    # external GEN receipt recovery is not proven. Unit tests explicitly opt
+    # into the adjudication state machine without exposing a public enable
+    # path in the contract.
+    vault.funding_enabled = True
     MSG.value=10**18
     vault.create_case('The fee ceiling','demo','fees','a'*40,'docs/fees.md','src/fees.py',
         'Our protocol never exceeds a 2% distribution fee.', '0'*64,'1'*64,72)

@@ -65,6 +65,7 @@ def _hash_commit(chain: int, vault: str, case_id: int, claimant: str,
 class PromiseVault(gl.Contract):
     engine: Address
     engine_ready: bool
+    funding_enabled: bool
     case_count: u64
     attempt_count: u64
     cases: TreeMap[str, str]
@@ -78,6 +79,12 @@ class PromiseVault(gl.Contract):
     def __init__(self, engine_address: str):
         self.engine = Address(_address_text(engine_address))
         self.engine_ready = False
+        # External GEN transfer failure/recovery is not proven on Studionet.
+        # Replacement deployments remain custody-safe by default: existing
+        # credits remain readable/withdrawable, but new irreversible bounties
+        # cannot be created until a separately reviewed payout mechanism is
+        # available. There is intentionally no public enable switch.
+        self.funding_enabled = False
         self.case_count = u64(0)
         self.attempt_count = u64(0)
         self.outstanding = u256(0)
@@ -87,6 +94,8 @@ class PromiseVault(gl.Contract):
     @gl.public.view
     def get_config(self) -> str:
         return _save({'engine': self.engine.as_hex, 'engine_ready': self.engine_ready, 'chain': 61999,
+                      'funding_enabled': self.funding_enabled,
+                      'withdrawal_status': 'EXPERIMENTAL_UNCONFIRMED',
                       'minimum_bounty_wei': str(10 ** 15),
                       'commit_reveal_seconds': 7200,
                       'pending_timeout_seconds': 604800})
@@ -180,6 +189,8 @@ class PromiseVault(gl.Contract):
         # precise vault. A misconfigured pair must never lock user funds.
         if not self.engine_ready:
             _fail('engine finality activation pending; funding is blocked')
+        if not self.funding_enabled:
+            _fail('live funding disabled; external GEN receipt recovery is unproven')
         bounty = int(gl.message.value)
         if bounty < 10 ** 15 or bounty > 10 ** 24:
             _fail('bounty out of range')

@@ -193,7 +193,14 @@ contradiction (bool), reason (plain string <= 500 chars).\n\n''' + json.dumps({
             verdict = model_verdict
             if verdict == 'CONTRADICTED' and not all(flags):
                 return _inconclusive('Incoherent model response.')
-            if verdict == 'OUT_OF_SCOPE' and flags[0]:
+            # Keep the three flags and the label as one settlement-level
+            # policy. A NOT_ESTABLISHED answer with contradiction=true is not
+            # a valid neutral finding: treating it as such would move the
+            # challenger's bond to the sponsor. Any incoherent combination is
+            # neutral INCONCLUSIVE instead.
+            if verdict == 'NOT_ESTABLISHED' and flags[2]:
+                return _inconclusive('Incoherent model response.')
+            if verdict == 'OUT_OF_SCOPE' and (flags[0] or flags[1] or flags[2]):
                 return _inconclusive('Incoherent model response.')
             return {'verdict': verdict, 'scope_ok': flags[0],
                     'proof_complete': flags[1], 'contradiction': flags[2],
