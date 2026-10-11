@@ -16,6 +16,7 @@ const cli = resolve(process.platform === 'win32'
   ? 'node_modules/.bin/genlayer.cmd'
   : 'node_modules/.bin/genlayer');
 const journal='receipt-deployment.state.json';
+let signerName='';
 const safe = s=>s.replace(/\x1b\[[0-9;]*m/g,'');
 const readJson=p=>existsSync(p)?JSON.parse(readFileSync(p,'utf8')):{};
 const run=(args)=>{
@@ -50,6 +51,16 @@ function confirmFinalized(hash) {
   if(!finalized || !successful) {
     throw Error(`Unable to prove FINALIZED + GenVM success for ${hash}; inspect the receipt manually. No automatic retry.`);
   }
+  return text;
+}
+function triggeredHash(receiptText) {
+  const section=receiptText.match(/triggered_transactions\s*:\s*\[[\s\S]{0,1600}?\]/i)?.[0]||'';
+  return section.match(/0x[0-9a-fA-F]{64}/)?.[0]||'';
+}
+function runAsSigner(args) {
+  if(!signerName) throw Error('No signer account name available.');
+  run(['account','use',signerName]);
+  return run(args);
 }
 function deploy(state,key,path,args) {
   if (state[key]?.verified) return state[key].address;
@@ -73,7 +84,7 @@ function deploy(state,key,path,args) {
   // Write a durable pre-submit intent FIRST: if this process is interrupted
   // or the CLI output is ambiguous, a later run must not broadcast again.
   state[key]={ambiguous:true,contract:path,verified:false};save(state);
-  const out=run(['deploy','--contract',path,...(args.length?['--args',...args]:[])]);
+  const out=runAsSigner(['deploy','--contract',path,...(args.length?['--args',...args]:[])]);
   state[key]={ambiguous:true,raw_output:out.slice(0,16000),verified:false};save(state);
   state[key]={hash:matchTx(out),address:matchAddress(out,'Contract Address'),verified:false};save(state);
   confirmFinalized(state[key].hash);
@@ -91,26 +102,35 @@ async function main() {
   if(!/studionet|studio\.genlayer\.com/i.test(info))throw Error('CLI is not configured for Studionet. Run: npm run cli -- network set studionet');
   const account=run(['account','show']);
   const signer=(account.match(/0x[0-9a-fA-F]{40}/)||[])[0];
+  signerName=(account.match(/name:\s*['\"]([^'\"]+)['\"]/i)||[])[1]||'';
   if(!signer)throw Error('No active CLI wallet detected. Unlock the active wallet before deployment.');
+  if(!signerName)throw Error('No active CLI wallet name detected.');
   console.log('Active CLI wallet:',signer);
   const state=readJson(journal);
   if(state.source_hashes && JSON.stringify(state.source_hashes)!==JSON.stringify(hashes()))throw Error('Source changed since deployment began. Do not mix contract versions.');
   if(state.signer && state.signer.toLowerCase()!==signer.toLowerCase())throw Error('Active wallet changed mid-deployment.');
   if(state.chain_id && state.chain_id!==61999)throw Error('State belongs to another network.');
-  state.signer=signer;state.chain_id=61999;state.rpc=network.rpc;state.source_hashes=hashes();save(state);
+  if(state.signer_name && state.signer_name!==signerName)throw Error('Active wallet name changed mid-deployment.');
+  state.signer=signer;state.signer_name=signerName;state.chain_id=61999;state.rpc=network.rpc;state.source_hashes=hashes();save(state);
   const engine=deploy(state,'engine','contracts/ProofEngine.py',[]);
   const vault=deploy(state,'vault','contracts/PromiseVault.py',[engine]);
+  let bindingReceipt='';
   if(!state.binding?.verified){
     if(state.binding?.ambiguous)throw Error('Ambiguous earlier vault-binding write: inspect recorded CLI output before retrying.');
-    if(state.binding?.hash){confirmFinalized(state.binding.hash);}else{
+    if(state.binding?.hash){bindingReceipt=confirmFinalized(state.binding.hash);}else{
       state.binding={ambiguous:true,verified:false};save(state);
-      const out=run(['write',engine,'bind_vault','--args',vault]);
+      const out=runAsSigner(['write',engine,'bind_vault','--args',vault]);
       state.binding={ambiguous:true,raw_output:out.slice(0,16000),verified:false};save(state);
       state.binding={hash:matchTx(out),verified:false};save(state);
-      confirmFinalized(state.binding.hash);
+      bindingReceipt=confirmFinalized(state.binding.hash);
     }
     state.binding.verified=true;save(state);
   }
+  if(!bindingReceipt && state.binding?.hash) bindingReceipt=confirmFinalized(state.binding.hash);
+  const activationChild=state.binding?.activation_child_tx||triggeredHash(bindingReceipt);
+  if(!activationChild)throw Error('Binding finalized but no activation child transaction was exposed; funding remains blocked.');
+  confirmFinalized(activationChild);
+  state.binding.activation_child_tx=activationChild;state.binding.activation_child_verified=true;save(state);
   const actual=run(['call',engine,'get_vault']);
   if(!actual.toLowerCase().includes(vault.toLowerCase()))throw Error('ProofEngine binding did not read back expected PromiseVault address.');
   // Binding triggers a separate finalized child transaction into PromiseVault.
@@ -122,7 +142,7 @@ async function main() {
   }
   const manifest={project:'RECEIPT!',chain_id:61999,rpc:network.rpc,signer,source_sha256:state.source_hashes,
     proof_engine:{address:engine,deploy_tx:state.engine.hash},promise_vault:{address:vault,deploy_tx:state.vault.hash},bind_tx:state.binding.hash,
-    observed_binding:vault,verified_at:new Date().toISOString()};
+    activation_child_tx:activationChild,observed_binding:vault,verified_at:new Date().toISOString()};
   writeFileSync('receipt-deployment.manifest.json',JSON.stringify(manifest,null,2)+'\n');
   writeFileSync('frontend/.env.local',`NEXT_PUBLIC_PROOF_ENGINE_ADDRESS=${engine}\nNEXT_PUBLIC_PROMISE_VAULT_ADDRESS=${vault}\nNEXT_PUBLIC_EXPLORER_URL=https://explorer-studio.genlayer.com\n`);
   console.log('\nDeployment recorded. The UI is configured. Complete the independent browser economic-lifecycle verification before publishing an assurance claim.');
