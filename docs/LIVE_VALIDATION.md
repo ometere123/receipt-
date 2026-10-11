@@ -93,6 +93,19 @@ recovery request is therefore `2026-10-18T20:23:12Z`, after the seven-day
 window, and it still would not itself release credit: the engine must confirm
 an absent verdict through its finalized recovery path.
 
+Additional read-only RPC checks on the assessment child
+`0x8d2caaed8b8698d4d1bc158a070aa64de9e10e27eb8e0adc1c2c910eb3b11b50`
+returned `status_name: CANCELED` (status code `8`), `result_name:
+NO_MAJORITY`, `value_credited: false`, `votes_committed: 0`,
+`votes_revealed: 0`, `appeal_bond: 0`, and `rotations_left: 0`. The raw
+`gen_getTransactionStatus` endpoint independently returned `CANCELED`. The
+current Studionet endpoint returned `Method not found` for the newer
+`gen_getTransactionLifecycle` RPC, and the repository-local CLI's read-only
+`appeal-bond` query reported that appeal-bond calculation is unsupported on
+this chain because `feeManagerContract/roundsStorageContract` are missing.
+No appeal, finalization, or recovery write was attempted; the available
+evidence does not prove a supported action that can safely resolve this child.
+
 Case 4's finalized ProofEngine child was
 `0x9dd07a6df79cf71e759bcce0f611e47826ce6e62b0364eac9cc27437c034eef4`,
 with callback `0x0a7556eef4fbf8ecbabd1b6ce85e78eed951e4cafa13e6484213707a922d9e41`.

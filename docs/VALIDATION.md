@@ -5,7 +5,7 @@ This document is a test specification and evidence ledger, **not** an economic-s
 ## Current local evidence
 
 - Exact Python environment: Python 3.12, `genlayer-py 0.18.0`, `genlayer-test 0.29.2`, `genvm-linter 0.11.0`.
-- `pytest -q tests/unit`: 79 passed, including the exhaustive 24-case
+- `pytest -q tests/unit`: 78 passed, including the exhaustive 24-case
   verdict/flag settlement matrix.
 - `pytest -q tests/direct`: 13 passed in genuine Direct Mode, including a
   real GenVM `Response.status` source-fetch/adjudication path, malformed-model
@@ -24,6 +24,12 @@ This document is a test specification and evidence ledger, **not** an economic-s
   `NO_MAJORITY` even though its EVM receipt was successful, and the contract
   ledger remains `EMITTED_UNCONFIRMED`. This does not establish safe recovery
   after a failed child transfer.
+- Case 3's assessment child is materially `CANCELED` with `NO_MAJORITY`, zero
+  committed/revealed votes, no appeal bond, and no credited value. The current
+  Studionet endpoint does not expose `gen_getTransactionLifecycle`, and the
+  local CLI cannot calculate an appeal bond because the required fee-manager
+  and rounds-storage addresses are absent. This is read-only evidence that no
+  supported appeal action was proven for the canceled child.
 - The frontend and replacement contract default keep new funding disabled;
   existing case records and credits remain readable, and withdrawals remain
   explicitly unconfirmed until external transfer recovery is proven.
