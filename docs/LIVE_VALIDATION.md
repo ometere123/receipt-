@@ -51,6 +51,12 @@ the contrast fix (21 desktop passes and 22 mobile passes; two non-violation
 items remained incomplete for axe's heuristics). No wallet connection or write
 transaction was attempted.
 
+The repository browser gate now runs `axe-core 4.14.0` against the clean,
+unconfigured production build across Explore, Funding gate, investigator desk,
+receipt wall, and About. The deterministic local run passed all 11 browser
+tests, including zero WCAG 2A/2AA violations on each primary view. This keeps
+the contrast fixes regression-tested without depending on live chain data.
+
 ## Deployed-source parity
 
 At commit `de3cd57cf3301b2f8dca0e3cec5f9bb539b1b52c`, `npm run source:verify`
