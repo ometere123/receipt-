@@ -1,0 +1,4 @@
+/* Keep the playful palette while meeting WCAG AA contrast thresholds. */
+.receipt-logo span { color: #b45347; }
+.steps-strip small { color: #6d697c; }
+.section-head .eyebrow { color: #6f51b5; }
