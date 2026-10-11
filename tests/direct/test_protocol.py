@@ -109,6 +109,21 @@ def test_unbound_engine_cannot_resend_activation(direct_vm, direct_deploy, direc
         e.resend_activation()
 
 
+def test_funding_gate_blocks_new_challenger_bond(direct_vm, direct_deploy, direct_alice, direct_bob):
+    direct_vm._chain_id = 61999
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    vault = direct_deploy('contracts/PromiseVault.py', _addr(direct_alice))
+    direct_vm.sender = direct_alice
+    direct_vm.origin = direct_alice
+    vault.activate_engine()
+    direct_vm.sender = direct_bob
+    direct_vm.origin = direct_bob
+    direct_vm.value = 5 * 10 ** 16
+    with direct_vm.expect_revert('live funding disabled'):
+        vault.commit_attempt(1, 'a' * 64)
+
+
 def test_only_configured_vault_can_assess(direct_vm, direct_deploy, direct_alice, direct_bob):
     e = _engine(direct_vm, direct_deploy, direct_alice)
     direct_vm.sender = direct_bob

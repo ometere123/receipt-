@@ -27,7 +27,7 @@ No case editing, owner overrides, verdict vetoes or delegated payout authorities
 
 **ProofEngine:** independently fetches frozen `raw.githubusercontent.com/{owner}/{repo}/{sha}/{path}` bytes, checks exact SHA-256 commitments/claim/anchor, calls an LLM under a custom Eq Principle, independently verifies the substantive leader result, and emits a finalization-triggered authenticated callback. It records each verdict for safe callback re-emission.
 
-Before accepting deposits, the vault requires `ProofEngine.get_vault()` to exactly match its own address and `funding_enabled` to be true. Replacement constructors set `funding_enabled = false` and expose no public enable switch while external GEN receipt recovery is unproven. ProofEngine can bind only once. ProofEngine refuses assessment requests not sent by its bound vault, and PromiseVault refuses verdicts not sent by its engine.
+Before accepting deposits, the vault requires `ProofEngine.get_vault()` to exactly match its own address and `funding_enabled` to be true. This gate covers both new bounties and challenger bonds. Replacement constructors set `funding_enabled = false` and expose no public enable switch while external GEN receipt recovery is unproven. ProofEngine can bind only once. ProofEngine refuses assessment requests not sent by its bound vault, and PromiseVault refuses verdicts not sent by its engine.
 
 ## Lifecycle
 

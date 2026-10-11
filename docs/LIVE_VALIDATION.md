@@ -9,7 +9,10 @@ candidate. The working-tree replacement contract now adds a default-off
 `funding_enabled` gate and coherent verdict normalization, but no replacement
 contract was deployed because fresh authorization for that irreversible action
 was not provided. The production frontend is separately configured with
-`NEXT_PUBLIC_FUNDING_ENABLED=false` and also reads the on-chain gate.
+`NEXT_PUBLIC_FUNDING_ENABLED=false` and also reads the on-chain gate. The
+replacement source gates both new bounties and challenger bonds; existing
+reveal, recovery, credit, and withdrawal controls remain available for prior
+entitlements.
 
 ## Network and deployment
 
@@ -127,8 +130,9 @@ The authoritative local evidence is the gitignored
 `receipt-live-lifecycle.json`; it records `BLOCKED`, required lifecycle
 success, and the unresolved case 3 rather than hiding either limitation.
 
-The replacement source fixes two source-level hazards and is covered by local
-unit/Direct Mode tests: funding is disabled by default, and incoherent
+The replacement source fixes three source-level hazards and is covered by local
+unit/Direct Mode tests: new bounties and challenger bonds are disabled by
+default, and incoherent
 `NOT_ESTABLISHED`/`OUT_OF_SCOPE` flag combinations become neutral
 `INCONCLUSIVE` results so a challenger bond is refunded. Those fixes are not
 live on the older addresses until an authorized replacement deployment is

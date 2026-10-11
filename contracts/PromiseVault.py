@@ -210,6 +210,10 @@ class PromiseVault(gl.Contract):
     def commit_attempt(self, case_id: int, commitment: str) -> None:
         if gl.message.sender_address != gl.message.origin_address:
             _fail('commitment requires direct EOA caller')
+        # A challenger bond is also new value entering the custody system.
+        # Keep it behind the same permanent safety gate as bounty funding.
+        if not self.funding_enabled:
+            _fail('live funding disabled; external GEN receipt recovery is unproven')
         case = self._require_case(case_id)
         if case['status'] != 'OPEN' or _now() >= case['deadline']:
             _fail('case closed or expired')

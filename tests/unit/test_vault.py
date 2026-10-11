@@ -214,6 +214,13 @@ def test_replacement_vault_blocks_funding_by_default(vault, engine):
     assert json.loads(vault.get_config())['funding_enabled'] is False
 
 
+def test_replacement_vault_blocks_challenger_bonds_by_default(vault):
+    MSG.value=5 * 10**16
+    with pytest.raises(UserError, match='live funding disabled'):
+        vault.commit_attempt(1, 'a' * 64)
+    assert vault.attempt_count == 0
+
+
 def test_only_bound_engine_may_activate(vault):
     MSG.sender_address=Address(ATTACKER)
     with pytest.raises(UserError, match='only configured'):

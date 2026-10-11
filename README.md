@@ -6,7 +6,7 @@ The product has a custom, responsive **detective-club UI** with a case board, cl
 
 ## Status and verification boundaries
 
-The current source includes 78 deterministic contract tests, 13 exact-stack GenVM Direct Mode tests, full GenVM lint plus semantic validation for both contracts under the pinned `GENVM_VERSION=v0.3.0-rc7`, 14 frontend unit tests, 10 production-browser tests, a clean production dependency audit, and a successful production build. A real Studionet deployment, exact source parity, finalized two-wallet lifecycle, and one independently observed EVM payout receipt are recorded in [`docs/LIVE_VALIDATION.md`](docs/LIVE_VALIDATION.md). **Live funding remains BLOCKED** because the external-transfer failure/recovery path is not proven; the UI and replacement contract now enforce a funding-off default, but this is not an economic-safety certification.
+The current source includes 79 deterministic contract tests, 14 exact-stack GenVM Direct Mode tests, full GenVM lint plus semantic validation for both contracts under the pinned `GENVM_VERSION=v0.3.0-rc7`, 14 frontend unit tests, 10 production-browser tests, a clean production dependency audit, and a successful production build. A real Studionet deployment, exact source parity, finalized two-wallet lifecycle, and one independently observed EVM payout receipt are recorded in [`docs/LIVE_VALIDATION.md`](docs/LIVE_VALIDATION.md). **Live funding remains BLOCKED** because the external-transfer failure/recovery path is not proven; the UI and replacement contract now enforce a funding-off default for both bounties and challenger bonds, but this is not an economic-safety certification.
 
 ## Architecture
 
@@ -62,7 +62,7 @@ npm run dev
 ```
 
 The frontend at `http://localhost:3000` displays a visible **deployment not configured** notice until both deployed addresses are present. This is intentional: it does not substitute fictional data.
-`NEXT_PUBLIC_FUNDING_ENABLED` defaults to `false`; the UI also reads the vault's on-chain `funding_enabled` flag, so both gates must be explicitly true before a new bounty can be submitted. The replacement `PromiseVault` constructor intentionally defaults that flag to false and has no public enable switch. Existing case records, challenge flows and credits remain readable; withdrawal is still labeled `EMITTED_UNCONFIRMED`.
+`NEXT_PUBLIC_FUNDING_ENABLED` defaults to `false`; the UI also reads the vault's on-chain `funding_enabled` flag, so both gates must be explicitly true before a new bounty or challenger bond can be submitted. The replacement `PromiseVault` constructor intentionally defaults that flag to false and has no public enable switch. Existing case records, reveal/recovery flows and credits remain readable; withdrawal is still labeled `EMITTED_UNCONFIRMED`.
 
 ## 61999 deployment (real transactions)
 
@@ -134,7 +134,7 @@ MIT licensed. See `LICENSE`.
 
 ## Adversarial and deployment evidence improvements
 
-- 78 deterministic unit checks and 13 exact-stack GenVM Direct Mode cases pass
+- 79 deterministic unit checks and 14 exact-stack GenVM Direct Mode cases pass
   locally. Direct Mode uses the pinned testing-suite and is separate from the
   unit harness; it covers the pinned runner's `Response.status` fetch path,
   malformed model neutrality, callback authorization, duplicate messages,
@@ -146,8 +146,9 @@ MIT licensed. See `LICENSE`.
 - Bind => `activate_engine` is a finalized asynchronous handshake. Funding is
   blocked until `PromiseVault.get_config.engine_ready == true`.
 - Replacement `PromiseVault` constructors also set `funding_enabled = false`;
-  `create_case` rejects funding until a separately reviewed custody policy is
-  available. There is no public contract method to turn it on.
+  both `create_case` and `commit_attempt` reject new value until a separately
+  reviewed custody policy is available. There is no public contract method to
+  turn it on.
 - `npm run source:verify` refuses to claim parity without a real deployment
   manifest and retrieves on-chain source using finalized GenLayer RPC.
 - `/api/build-info` reports commit and deployment metadata ONLY if supplied

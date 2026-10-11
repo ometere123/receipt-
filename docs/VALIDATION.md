@@ -5,9 +5,9 @@ This document is a test specification and evidence ledger, **not** an economic-s
 ## Current local evidence
 
 - Exact Python environment: Python 3.12, `genlayer-py 0.18.0`, `genlayer-test 0.29.2`, `genvm-linter 0.11.0`.
-- `pytest -q tests/unit`: 78 passed, including the exhaustive 24-case
+- `pytest -q tests/unit`: 79 passed, including the exhaustive 24-case
   verdict/flag settlement matrix.
-- `pytest -q tests/direct`: 13 passed in genuine Direct Mode, including a
+- `pytest -q tests/direct`: 14 passed in genuine Direct Mode, including a
   real GenVM `Response.status` source-fetch/adjudication path, malformed-model
   neutrality, callback authorization, duplicate settlement, recovery
   confirmation and financial-conservation flows.
