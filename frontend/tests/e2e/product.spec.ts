@@ -13,11 +13,14 @@ test('deployment state is explicitly unconfigured', async ({page}) => {
   await expect(page.getByText(/not a simulated chain/i)).toBeVisible();
 });
 
-test('funding workflow shows real fields without a fake receipt', async ({page}) => {
+test('funding gate keeps unsafe deposits unavailable without hiding the workflow', async ({page}) => {
   await page.goto('/');
-  await page.locator('.desktop-nav').getByRole('button',{name:'Fund a claim'}).click();
+  await expect(page.locator('.desktop-nav').getByRole('button',{name:'Funding gate'})).toBeVisible();
+  await page.locator('.desktop-nav').getByRole('button',{name:'Funding gate'}).click();
   await expect(page.getByText(/What promise are we testing/i)).toBeVisible();
   await expect(page.getByText(/Bounty in GEN/i)).toBeVisible();
+  await expect(page.getByText(/Funding is technically disabled/i)).toBeVisible();
+  await expect(page.getByRole('button',{name:'Fund & publish'})).toHaveCount(0);
 });
 
 test('investigator desk demands a wallet', async ({page}) => {
