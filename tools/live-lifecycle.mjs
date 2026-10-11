@@ -132,6 +132,20 @@ async function settleChildren(client, parent, label) {
   }
   return settled;
 }
+async function inspectExternalTransfer(client, parent, recipient, label) {
+  if (!parent.children.length) throw new Error(`${label} emitted no observable child transaction.`);
+  const transfers = [];
+  for (const child of parent.children) {
+    const transaction = await client.getTransaction({ hash: child });
+    const evmReceipt = await raw('eth_getTransactionReceipt', [child]);
+    const evmStatus = String(evmReceipt?.status || '').toLowerCase();
+    if (String(transaction.recipient || '').toLowerCase() !== recipient.toLowerCase() || evmStatus !== '0x1' || transaction.value_credited !== true) {
+      throw new Error(`${label} child ${child} did not prove EVM receipt success and value credit.`);
+    }
+    transfers.push({ hash: child, genlayer: plain(transaction), evm_receipt: evmReceipt });
+  }
+  return transfers;
+}
 function commitment(vault, caseId, claimant, salt, anchor, thesis) {
   const canonical = JSON.stringify([String(CHAIN), vault.toLowerCase(), String(caseId), claimant.toLowerCase(), salt, anchor, thesis]);
   return createHash('sha256').update(canonical).digest('hex');
@@ -182,7 +196,16 @@ async function main() {
   }
 
   let positive;
-  if (RESUME_CASE_ID) {
+  const existingPositive = evidence.cases.find(item => item.label === 'positive contradiction' && item.withdraw?.hash);
+  if (existingPositive) {
+    positive = existingPositive;
+    positive.withdraw_children = positive.withdraw.children.map(hash => ({hash}));
+    positive.withdraw_child_transactions = await inspectExternalTransfer(readClient, positive.withdraw, challenger.address, 'positive withdrawal');
+    positive.balance_after_withdraw = (await nativeBalance(challenger.address)).toString();
+    positive.dispatch = await readJSON(readClient, VAULT, 'get_dispatch', [1]);
+    positive.external_child_evidence = positive.withdraw_child_transactions;
+    save();
+  } else if (RESUME_CASE_ID) {
     if (!RESUME_CREATE_TX) throw new Error('RECEIPT_RESUME_CREATE_TX is required with RECEIPT_RESUME_CASE_ID.');
     const state = await readJSON(readClient, VAULT, 'get_case', [RESUME_CASE_ID]);
     if (state.status !== 'OPEN' || state.active_attempt) throw new Error(`Resume case ${RESUME_CASE_ID} is not still open and attempt-free.`);
@@ -191,17 +214,20 @@ async function main() {
   } else {
     positive = await createCase('positive contradiction');
   }
-  await commitAndReveal(positive, 'positive', SOURCE_ANCHOR,
-    'The frozen code contradicts the published claim: withdraw clears the credit before it emits the external transfer, and the dispatch is explicitly EMITTED_UNCONFIRMED.');
-  if (positive.final_attempt.verdict !== 'CONTRADICTED' || positive.final_case.status !== 'WON') throw new Error(`Positive case did not settle as CONTRADICTED/WON: ${positive.final_attempt.verdict}/${positive.final_case.status}`);
-  positive.replay = await rejectedTx(challengerClient, VAULT, 'reveal_attempt', [positive.final_attempt.id, positive.commitment.salt, positive.commitment.anchor, positive.commitment.thesis], 0n, 'positive replay reveal');
-  positive.balance_before_withdraw = (await nativeBalance(challenger.address)).toString();
-  positive.withdraw = await writeTx(challengerClient, VAULT, 'withdraw', [], 0n, 'positive challenger withdraw');
-  positive.withdraw_children = await settleChildren(readClient, positive.withdraw, 'positive withdrawal');
-  positive.balance_after_withdraw = (await nativeBalance(challenger.address)).toString();
-  positive.dispatch = await readJSON(readClient, VAULT, 'get_dispatch', [1]);
-  positive.withdraw_child_transactions = [];
-  for (const child of positive.withdraw_children) positive.withdraw_child_transactions.push(plain(await readClient.getTransaction({ hash: child.hash })));
+  if (!existingPositive) {
+    await commitAndReveal(positive, 'positive', SOURCE_ANCHOR,
+      'The frozen code contradicts the published claim: withdraw clears the credit before it emits the external transfer, and the dispatch is explicitly EMITTED_UNCONFIRMED.');
+    if (positive.final_attempt.verdict !== 'CONTRADICTED' || positive.final_case.status !== 'WON') throw new Error(`Positive case did not settle as CONTRADICTED/WON: ${positive.final_attempt.verdict}/${positive.final_case.status}`);
+    positive.replay = await rejectedTx(challengerClient, VAULT, 'reveal_attempt', [positive.final_attempt.id, positive.commitment.salt, positive.commitment.anchor, positive.commitment.thesis], 0n, 'positive replay reveal');
+    positive.balance_before_withdraw = (await nativeBalance(challenger.address)).toString();
+    save();
+    positive.withdraw = await writeTx(challengerClient, VAULT, 'withdraw', [], 0n, 'positive challenger withdraw');
+    positive.withdraw_children = positive.withdraw.children.map(hash => ({hash}));
+    positive.withdraw_child_transactions = await inspectExternalTransfer(readClient, positive.withdraw, challenger.address, 'positive withdrawal');
+    positive.balance_after_withdraw = (await nativeBalance(challenger.address)).toString();
+    positive.dispatch = await readJSON(readClient, VAULT, 'get_dispatch', [1]);
+    positive.external_child_evidence = positive.withdraw_child_transactions;
+  }
   if (BigInt(positive.balance_after_withdraw) <= BigInt(positive.balance_before_withdraw)) throw new Error('Successful adjudication did not produce a measurable recipient balance increase.');
   save();
 
