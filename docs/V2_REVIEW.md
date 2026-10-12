@@ -54,6 +54,8 @@ Trust boundaries are: injected EIP-1193 wallet, GenLayer finality, validator non
 | `npm run lint:contracts` | PASS: 3 checks | ReceiptV2 linter/semantic validation | Live deployment. |
 | Frontend typecheck/Vitest/build | PASS: typecheck, 14 tests, production build | Wallet/UI/configuration implementation compiles | Wallet signing or live chain state. |
 | Reconciliation fixtures | PASS: 5 | Read-only evidence classification remains idempotent | A live transfer. |
+| Dependency audit | PASS: root and frontend report 0 vulnerabilities | Current package audit | Future dependency updates. |
+| [GitHub Actions 38212267394](https://github.com/ometere123/receipt-/actions/runs/38212267394) | PASS on `02ed7224e115c95384ae54712b9e31f005ef7395` | Exact-commit contract, frontend, browser and GenVM Direct Mode gates | StudioNet deployment or GEN lifecycle. |
 | Final StudioNet deployment | PENDING approval | — | No final address is claimed. |
 | Live positive/neutral/negative lifecycle | PENDING deployment | — | Must not be represented as pass. |
 
