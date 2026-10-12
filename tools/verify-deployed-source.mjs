@@ -1,4 +1,4 @@
-/** Fail-closed source provenance verification for the active ReceiptV2 deployment. */
+/** Source provenance verification for the active funded ReceiptV2 deployment. */
 import { readFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { chainPreflight } from './preflight.mjs';
@@ -8,7 +8,7 @@ const sourceFile = 'contracts/ReceiptV2.py';
 if (!existsSync(manifestFile)) throw Error('No ReceiptV2 deployment manifest. Deploy first; never invent an address.');
 const manifest = JSON.parse(readFileSync(manifestFile, 'utf8'));
 if (manifest.chain_id !== 61999 || manifest.architecture !== 'SINGLE_IC') throw Error('Refusing non-61999 or non-single-contract provenance.');
-if (manifest.funding_enabled !== false || manifest.withdrawal_status !== 'DISABLED_FAIL_CLOSED') throw Error('Manifest does not prove the fail-closed safety gate.');
+if (manifest.funding_enabled !== true || manifest.withdrawal_status !== 'EVM_DISPATCH_EMITTED_UNCONFIRMED') throw Error('Manifest does not describe the funded ReceiptV2 configuration.');
 const { rpc } = await chainPreflight();
 if (rpc !== manifest.rpc) throw Error('RPC changed from the deployment manifest.');
 const address = manifest.receipt_v2?.address;
@@ -37,4 +37,4 @@ const remote = Buffer.from(encoded, 'base64');
 const exact = local.equals(remote);
 console.log(`ReceiptV2 ${address} local_sha256=${expectedHash} deployed_sha256=${hash(remote)} exact_bytes=${exact}`);
 if (!exact) throw Error('ReceiptV2 deployed bytes do not match the tracked source.');
-console.log('SOURCE PARITY: 1/1 exact bytes on finalized Studionet. This does not prove an economic payout lifecycle.');
+console.log('SOURCE PARITY: 1/1 exact bytes on finalized Studionet. External dispatch receipts remain independently observable evidence.');

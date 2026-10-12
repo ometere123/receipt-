@@ -9,27 +9,27 @@ test('product renders without fictional on-chain cases', async ({page}) => {
 
 test('deployment state is explicit and never fictional', async ({page}) => {
   await page.goto('/');
-  const configured = page.getByText(/V2 SAFETY GATE — FUNDING DISABLED/i);
+  const configured = page.getByText(/V2 funding is unavailable/i);
   const unconfigured = page.getByText(/V2 deployment not configured/i);
   if (await configured.count()) {
     await expect(configured).toBeVisible();
-    await expect(page.getByText(/external GEN recovery is not proven/i)).toBeVisible();
+    await expect(page.getByText(/frontend configuration does not currently agree/i)).toBeVisible();
   } else {
     await expect(unconfigured).toBeVisible();
     await expect(page.getByText(/not a simulated chain/i)).toBeVisible();
   }
 });
 
-test('funding gate keeps unsafe deposits unavailable without hiding the workflow', async ({page}) => {
+test('funding configuration keeps value-bearing writes explicit without hiding the workflow', async ({page}) => {
   await page.goto('/');
-  await expect(page.locator('.desktop-nav').getByRole('button',{name:'Funding gate'})).toBeVisible();
-  await page.locator('.desktop-nav').getByRole('button',{name:'Funding gate'}).click();
+  await expect(page.locator('.desktop-nav').getByRole('button',{name:'Review configuration'})).toBeVisible();
+  await page.locator('.desktop-nav').getByRole('button',{name:'Review configuration'}).click();
   await expect(page.getByText(/What promise are we testing/i)).toBeVisible();
   await expect(page.getByText(/Bounty in GEN/i)).toBeVisible();
-  await expect(page.getByText(/Funding is technically disabled/i)).toBeVisible();
+  await expect(page.getByText(/Funding is not enabled in this frontend/i)).toBeVisible();
   await expect(page.getByRole('button',{name:'Fund & publish'})).toHaveCount(0);
   await page.getByRole('button',{name:'Receipt home'}).click();
-  await expect(page.getByText(/Credits remain fail-closed/i)).toBeVisible();
+  await expect(page.getByText(/Read the configured deployment state/i)).toBeVisible();
   await expect(page.getByText(/Validators decide, you collect/i)).toHaveCount(0);
 });
 

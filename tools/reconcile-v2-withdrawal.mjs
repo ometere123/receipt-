@@ -1,9 +1,9 @@
 /**
  * V2 withdrawal reconciliation report.
  *
- * V2 intentionally has no dispatch to reconcile: the contract reports a
- * fail-closed withdrawal gate and retains internal credits. This read-only
- * report makes that state explicit instead of reusing the V1 dispatch parser.
+ * V2 records native GEN withdrawal dispatches in the single contract. This
+ * report remains read-only: it describes the configured dispatch boundary and
+ * never retries, recredits, or treats a dispatch record as an external receipt.
  */
 import { existsSync, readFileSync } from 'node:fs';
 
@@ -18,12 +18,12 @@ if (manifest.architecture !== 'SINGLE_IC' || manifest.chain_id !== 61999) {
   process.exitCode = 1;
 } else {
   console.log(JSON.stringify({
-    status: manifest.withdrawal_status === 'DISABLED_FAIL_CLOSED' ? 'DISABLED_NO_DISPATCH' : 'REVIEW_REQUIRED',
+    status: manifest.withdrawal_status === 'EVM_DISPATCH_EMITTED_UNCONFIRMED' ? 'DISPATCH_READY' : 'REVIEW_REQUIRED',
     architecture: manifest.architecture,
     chain_id: manifest.chain_id,
     receipt_v2: manifest.receipt_v2?.address || null,
-    dispatch_expected: false,
+    dispatch_expected: true,
     writes_performed: false,
-    note: 'Internal credits are not external GEN receipts; no retry or recredit is safe without an authenticated protocol outcome.',
+    note: 'A dispatch record proves the contract emitted the EVM transfer request; inspect the external child receipt separately. No automatic retry or recredit is performed.',
   }, null, 2));
 }

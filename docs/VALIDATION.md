@@ -1,41 +1,35 @@
 # Validation and proof-of-operation requirements
 
-This document is a test specification and evidence ledger, **not** an economic-safety certification. Current deployment and lifecycle evidence is recorded in [`LIVE_VALIDATION.md`](LIVE_VALIDATION.md); do not invent or backfill transactions.
+This document is a test specification and evidence ledger, **not** an economic-safety certification. The final funded source is locally validated; final StudioNet deployment and lifecycle evidence remain pending explicit signer/scope/spend approval. Do not invent or backfill transactions.
 
 ## Current local evidence
 
-- Exact Python environment: Python 3.12, `genlayer-py 0.18.0`, `genlayer-test 0.29.2`, `genvm-linter 0.11.0`.
-- `pytest -q tests/unit`: 104 passed, including malformed-model, prompt-injection,
+- Exact repository toolchain: GenLayer CLI `0.39.1`, GenVM Direct Mode `genlayer-test 0.29.2`.
+- `pytest -q tests/unit`: 106 passed, including malformed-model, prompt-injection,
   targeted verdict-field mutations, validator-disagreement, boundary, unavailable-source
   and conservation coverage for the active V2 contract.
-- `pytest -q tests/direct`: 16 passed in genuine Direct Mode, including the
-  safe starting-state and fail-closed withdrawal checks.
+- `pytest -q tests/direct`: 25 passed in genuine Direct Mode, including native
+  funding, source-fetch adjudication, neutral outcomes, recipient dispatch,
+  recovery, duplicates and wrong wallet/network checks.
 - `npm run lint:contracts`: the active `ReceiptV2.py` passes all 3 lint and
   semantic-validation checks for the pinned 61999 toolchain.
-- Frontend: typecheck passed, Vitest 14 passed, ESLint passed, production build
-  passed, and Playwright 12 passed against the built app. The fresh browser
-  suite covers the V2 safety gate and explicit read-only V1 history viewer.
+- Frontend: typecheck passed, Vitest 14 passed, and production build passed.
+  The desk exposes claimable GEN, recipient withdrawal and dispatch status;
+  the historical V1 viewer remains read-only.
 - `npm run test:reconciliation`: 5 deterministic read-only payout-reconciliation fixtures pass, covering a successful receipt with `NO_MAJORITY`, a failed receipt, conflicting evidence, a missing child, and duplicate/idempotent observations. `npm run reconcile:withdrawal` performs the same collection against the pinned Studionet RPC without writes, retries or recredits.
-- The active replacement is deployed on Studionet 61999 at
-  `0xa61EC599648782b2286eccd7e6e66971314D833A`; deployment transaction
-  `0x0d97e0fe016df6ed45472016c72b5b6ef678d84a5a81fe246e3f500b31ed28cd`
-  finalized successfully, and `npm run source:verify` reports exact byte parity
-  for SHA-256 `507c15b977f660014af663ef8371fa9b873c7f8a3c1f373815c4a356afa46a91`.
+- The previous fail-closed V2 deployment is superseded by this funded source;
+  no final funded address or deployment transaction is claimed yet.
   Historical V1 lifecycle and payout evidence remains in
   [`LIVE_VALIDATION.md`](LIVE_VALIDATION.md) and is not V2 proof.
-- The economic safety gate remains BLOCKED: the payout child reached
-  `NO_MAJORITY` even though its EVM receipt was successful, and the contract
-  ledger remains `EMITTED_UNCONFIRMED`. This does not establish safe recovery
-  after a failed child transfer.
 - Case 3's assessment child is materially `CANCELED` with `NO_MAJORITY`, zero
   committed/revealed votes, no appeal bond, and no credited value. The current
   Studionet endpoint does not expose `gen_getTransactionLifecycle`, and the
   local CLI cannot calculate an appeal bond because the required fee-manager
   and rounds-storage addresses are absent. This is read-only evidence that no
   supported appeal action was proven for the canceled child.
-- The frontend and replacement contract default keep new funding disabled;
-  existing case records and credits remain readable, and withdrawals remain
-  explicitly unconfirmed until external transfer recovery is proven.
+- The frontend and contract use native GEN funding and recipient-only EVM
+  dispatch. A dispatch is recorded as `EMITTED_UNCONFIRMED`; the external child
+  receipt is independently observed and never retried or re-credited by V2.
 
 ## Checks already implementable offline
 
@@ -63,20 +57,20 @@ node --check tools/deploy-studionet.mjs
 | Action | Expected verification | Evidence |
 | --- | --- | --- |
 | Deploy ReceiptV2 | FINALIZED + execution SUCCESS; one address, schema and source match | [`V2_EVIDENCE.md`](V2_EVIDENCE.md), deployment tx, code and SHA |
-| Read ReceiptV2 configuration | `SINGLE_IC`, chain 61999, funding false, withdrawal fail-closed | finalized read and treasury status |
-| Sponsor funds claim | **BLOCKED by safety gate** until external recovery is proven | contract revert and frontend safety gate |
+| Read ReceiptV2 configuration | `SINGLE_IC`, chain 61999, native funding, EVM dispatch status | finalized read and treasury status |
+| Sponsor funds claim | payable native GEN `create_case` | finalized transaction and case/treasury readback |
 | Attacker tries wrong chain | blocked before EIP-1193 write | browser capture |
-| Challenger commits exact bond | **BLOCKED by safety gate** until external recovery is proven | contract revert and frontend safety gate |
+| Challenger commits exact bond | payable native GEN `commit_attempt` | finalized transaction and attempt/treasury readback |
 | Challenger reveals | commitment verified; correct finalized child assess appears | reveal tx plus child tx |
 | Independent validation | validators actually fetch same digest and substantively evaluate source and claim | traces, malicious leader scenarios |
 | ReceiptV2 stores verdict | normalized result and entitlement update in one contract transaction | `get_verdict`, `get_attempt`, `get_credit` |
-| ReceiptV2 withdrawal | **DISABLED_FAIL_CLOSED**; no external dispatch or state clearing | contract revert and zero dispatch counters |
+| ReceiptV2 withdrawal | recipient-only EVM dispatch; credit clears once and conservation holds | dispatch record, external child receipt and treasury readback |
 | Historical V1 payout | preserved only as read-only evidence; not a V2 safety proof | [`LIVE_VALIDATION.md`](LIVE_VALIDATION.md) |
-| Invalid/inconclusive/timeout cases | local and Direct Mode state-machine coverage; live funding blocked | 104 unit tests, 16 Direct Mode tests |
+| Invalid/inconclusive/timeout cases | local and Direct Mode state-machine coverage | 106 unit tests, 25 Direct Mode tests |
 | Browser refresh | committed data and pending tx recover; no duplicate write | screen recording + tx IDs |
 | Responsive and a11y | phone, desktop, contrast, keyboard dialog, reduced motion | manual UI checklist |
 
-The protocol's message fan-out and external GEN transfers are the most important unresolved real-network risks before any claim of complete implementation. No independent score or mainnet guarantee is implied by passing the local tests.
+The external child receipt remains a separately evidenced boundary. No independent score or mainnet guarantee is implied by passing the local tests.
 
 ## Adversarial source cases
 
@@ -94,12 +88,11 @@ The protocol's message fan-out and external GEN transfers are the most important
 
 ## Additional mandatory risks found by EXIGENT comparison
 
-EXIGENT deliberately removed external GEN payouts after finding that a failed
-child transfer is not reliably reimbursed. RECEIPT! retains bounties as a
-core use case; **this risk remains a hard economic-safety gate**. The added
-`EMITTED_UNCONFIRMED` ledger does NOT repair failed transfers. Live proof
-requires finalized execution state and EOA receipt; if transfers fail or
-are untraceable, stop before promoting funding.
+The `EMITTED_UNCONFIRMED` ledger records the ordinary external-transfer
+boundary without claiming that it is an authenticated receipt. Live proof
+requires finalized execution state and EOA receipt evidence; if a transfer
+fails or is untraceable, record the method/transaction and stop retries rather
+than silently re-crediting or paying twice.
 
 The asynchronous timeout-recovery handshake avoids a `LATEST_FINAL` engine
 read inside PromiseVault. Test adjudication-vs-recovery interleavings in

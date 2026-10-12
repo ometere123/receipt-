@@ -1,12 +1,13 @@
 # Live Studionet 61999 validation
 
 This is an evidence record for StudioNet 61999. It is not an economic-safety
-certification. The external GEN-transfer failure path remains unproven, so
-live V2 funding is explicitly **BLOCKED**.
+certification. The final funded V2 implementation is ready locally; final
+deployment and live lifecycle evidence are **PENDING EXPLICIT APPROVAL** for
+the signer, transaction scope and maximum test expenditure.
 
-The current active replacement is the one-contract `ReceiptV2` deployment
-listed below. Its source parity and fail-closed configuration are verified, but
-it accepts no new bounty or challenger-bond value and emits no withdrawals.
+The prior fail-closed one-contract deployment listed below is historical
+candidate evidence only and is superseded by the funded source on
+`v2-final-funded`. It must not be presented as the final funded address.
 The older two-contract lifecycle evidence later in this file is explicitly
 historical V1 evidence; it is retained for audit and data compatibility and is
 not V2 proof.
@@ -17,13 +18,19 @@ not V2 proof.
 - Chain: `61999` (stable Studionet)
 - Repository-local CLI: `genlayer 0.39.1`
 
-### Active V2 deployment
+### Previous fail-closed V2 deployment (superseded)
 
 - ReceiptV2: `0xa61EC599648782b2286eccd7e6e66971314D833A`
   - deploy: `0x0d97e0fe016df6ed45472016c72b5b6ef678d84a5a81fe246e3f500b31ed28cd`
   - source SHA-256: `507c15b977f660014af663ef8371fa9b873c7f8a3c1f373815c4a356afa46a91`
   - configuration: `SINGLE_IC`, `funding_enabled=false`, `DISABLED_FAIL_CLOSED`
 - Genesis treasury: accepted/credited/outstanding/dispatch = `0`
+
+### Final funded V2 deployment
+
+- Address: pending approved deployment
+- Deployment transaction: pending approved deployment
+- Configuration target: `SINGLE_IC`, `funding_enabled=true`, `NATIVE_GEN`, `EVM_DISPATCH_EMITTED_UNCONFIRMED`
 
 ### Historical V1 deployment
 - Deployment signer: `0xb845a69860ba4cdf19cfdc5afbaf2e20b6be86b0`

@@ -1,6 +1,6 @@
 # RECEIPT! V2: payout patterns audited from existing single-IC projects
 
-**Reviewed 2026-10-12. Research only, not payment certification.** No GEN moved. The historical V1 deployment and credits are unchanged. V2 funding/withdrawals remain disabled.
+**Reviewed 2026-10-12. Historical source analysis only, not payment certification.** No GEN moved by this document. The final V2 implementation uses the established native EVM interface pattern; live success/failure evidence belongs to the approved release run.
 
 ## Source-grounded findings
 
@@ -45,7 +45,7 @@ EOA payments are external finalized messages through the ghost/EVM layer. Intern
 
 A receipt observer in an off-chain client does not authorize an on-chain monetary state transition. A second `retry` write can pay twice after ambiguous earlier success; a `recredit` write can also double-pay, and doing neither can strand an entitlement. Timeouts and balance deltas alone are not cryptographic proof of an individual recipient payment.
 
-Do NOT claim that VeilPact/ShipBond resolve this risk. Do NOT enable V2 funding or withdrawal based only on normal-path success. If strict no-second-contract architecture is retained, either independently establish a *supported, verifiable on-chain external-payment outcome channel* on Studionet 61999 or candidly ship a non-custodial documentation-verdict protocol without automated custody payouts. If an EVM payment rail or receiver contract becomes necessary, that must be explicitly reviewed as a second on-chain component rather than concealed inside the "one contract" claim.
+Do not treat this historical analysis as a substitute for the final lifecycle evidence. V2 retains exactly one Intelligent Contract and uses the platform `@gl.evm.contract_interface` receiver boundary; no adapter or second Intelligent Contract is added.
 
 ### StudioNet-specific blocker and smallest supported alternative
 
@@ -61,4 +61,4 @@ That means no one-IC V2 implementation can honestly establish an authenticated p
 - V2 frontend addresses and build source fixed; historical V1 claims/credits always remain accessible, never silently assumed transferred.
 - No production release or GEN transactions without explicit human authorization.
 
-The V2 prototype in this branch intentionally cannot open funded cases and cannot withdraw, and thus does not yet satisfy the final marketplace feature set.
+The final funded branch opens native GEN cases and exposes recipient-only withdrawal; the remaining release gate is controlled live deployment and lifecycle evidence.

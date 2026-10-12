@@ -2,7 +2,7 @@
 import hashlib
 import json
 import pytest
-from tests.unit.conftest import V2MOD, MSG, NETWORK, SPONSOR, CLAIMANT, ATTACKER, VAULT, Address, UserError
+from tests.unit.conftest import V2MOD, MSG, NETWORK, TRANSFERS, SPONSOR, CLAIMANT, ATTACKER, VAULT, Address, UserError
 
 @pytest.fixture
 def one():
@@ -10,21 +10,13 @@ def one():
     v.cases={}; v.attempts={}; v.credits={}; v.dispatches={}; v.verdicts={}
     return v
 
-def test_default_funding_off_and_withdrawal_off(one):
+def test_default_funding_and_withdrawal_are_enabled(one):
     config = json.loads(one.get_config())
     assert config['architecture']=='SINGLE_IC'
-    assert config['funding_enabled'] is False
-    assert config['withdrawal_status']=='DISABLED_FAIL_CLOSED'
-    assert config['funding_mode']=='FAIL_CLOSED_UNTIL_PAYOUT_PROOF'
-    MSG.value = 10**18
-    with pytest.raises(UserError, match='live funding disabled'):
-        one.create_case('Source claim','demo','repo','a'*40,'docs/claim.md','src/code.py',
-                        'Our code always caps total fees at 2 percent.', '0'*64,'1'*64,72)
-    MSG.value=0
-    one.credits[Address(SPONSOR)]=10**18
-    with pytest.raises(UserError, match='external withdrawals disabled'):
-        one.withdraw()
-    assert one.get_credit(SPONSOR)==str(10**18)
+    assert config['funding_enabled'] is True
+    assert config['withdrawal_status']=='EVM_DISPATCH_EMITTED_UNCONFIRMED'
+    assert config['funding_mode']=='NATIVE_GEN'
+    assert config['external_messages']=='EVM_INTERFACE'
 
 def _prepared(one):
     one.funding_enabled=True  # Unit-only fixture; production has no enable method
@@ -71,6 +63,41 @@ def test_anyone_can_assess_and_settle_atomically(one):
     assert verdict['contradiction'] is True
     with pytest.raises(UserError,match='not an assessable'):
         one.adjudicate_attempt(1)
+
+def test_recipient_withdrawal_emits_once_and_preserves_conservation(one):
+    _prepared(one)
+    MSG.sender_address = Address(ATTACKER)
+    MSG.origin_address = Address(ATTACKER)
+    assert one.adjudicate_attempt(1) == 'CONTRADICTED'
+    amount = 10**18 + 5*10**16
+    before = json.loads(one.get_treasury_status())
+    assert before['accepted_wei'] == before['outstanding_wei']
+    MSG.sender_address = Address(CLAIMANT)
+    MSG.origin_address = Address(CLAIMANT)
+    one.withdraw()
+    assert one.get_credit(CLAIMANT) == '0'
+    after = json.loads(one.get_treasury_status())
+    assert after['accepted_wei'] == str(int(after['outstanding_wei']) + int(after['external_dispatch_wei']))
+    assert after['outstanding_wei'] == '0'
+    assert after['external_dispatch_wei'] == str(amount)
+    assert after['dispatch_count'] == 1
+    assert json.loads(one.get_dispatch(1))['status'] == 'EMITTED_UNCONFIRMED'
+    assert TRANSFERS == [(CLAIMANT, amount)]
+    with pytest.raises(UserError, match='nothing to withdraw'):
+        one.withdraw()
+
+def test_withdrawal_is_recipient_restricted_and_does_not_dispatch_on_bad_origin(one):
+    _prepared(one)
+    MSG.sender_address = Address(ATTACKER)
+    MSG.origin_address = Address(ATTACKER)
+    one.adjudicate_attempt(1)
+    MSG.sender_address = Address(CLAIMANT)
+    MSG.origin_address = Address(ATTACKER)
+    with pytest.raises(UserError, match='direct EOA'):
+        one.withdraw()
+    assert one.get_credit(CLAIMANT) == str(10**18 + 5*10**16)
+    assert json.loads(one.get_treasury_status())['dispatch_count'] == 0
+    assert TRANSFERS == []
 
 def test_single_state_recovery_prevents_late_settlement(one,monkeypatch):
     _prepared(one)

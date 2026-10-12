@@ -4,7 +4,9 @@ RECEIPT! is a source-grounded documentation-claim registry for GenLayer Studione
 
 ## Current release status
 
-**NOT_READY for live funding or withdrawals.** The contract is deliberately fail-closed: `funding_enabled` starts false, there is no public activation method, and `withdraw()` never emits an external GEN transfer. This is the only honest status until Studionet exposes an authenticated, receipt-bound failure/recovery path for external GEN messages that can be enforced by one Intelligent Contract.
+The final funded implementation is on branch `v2-final-funded`. `ReceiptV2.py` is the only active Intelligent Contract: native GEN enters through payable `create_case`/`commit_attempt`, adjudication remains atomic, and recipient-only `withdraw()` emits the established EVM transfer request while recording `EMITTED_UNCONFIRMED`.
+
+The final StudioNet deployment and live economic lifecycle are pending explicit approval for the deployment signer, transaction scope, and maximum test expenditure. The previous fail-closed deployment is not evidence for this funded source and must not be used as the final address.
 
 The V1 `ProofEngine.py` and `PromiseVault.py` sources and their historical deployment evidence remain in the repository for read-only audit/history. V1 balances are not migrated into V2, and `main` is not changed by this branch.
 
@@ -17,21 +19,25 @@ flowchart TD
   R --> A[Validator fetch + normalized verdict]
   A --> S[Atomic settlement in ReceiptV2]
   S --> E[Internal credit entitlement]
-  E -. payout gate closed .-> X[No external GEN dispatch]
+  E -->|recipient-only withdraw| X[EVM emit_transfer dispatch]
   H[V1 historical addresses] -. read-only history only .-> W
 ```
 
-ReceiptV2 owns case registration, immutable Git locators and digests, commit/reveal, source fetching, validator agreement, adjudication, expiry, timeout recovery, credits, conservation counters and withdrawal gating. There is no ProofEngine callback, cross-contract binding, resend method, child tombstone or admin recredit path.
+ReceiptV2 owns case registration, immutable Git locators and digests, commit/reveal, source fetching, validator agreement, adjudication, expiry, timeout recovery, credits, conservation counters and withdrawal dispatch records. There is no ProofEngine callback, cross-contract binding, resend method, child tombstone or admin recredit path.
 
 ## Economic conservation model
 
-While the safety gate is closed:
+Before a withdrawal dispatch:
 
 `accepted_wei = outstanding_wei`
 
-`credited_wei` is the cumulative sum of internal entitlements created by terminal state transitions. It is not additional money. Settlement moves liability from a case/attempt to a wallet credit without changing total outstanding liability. Since V2 never dispatches GEN, `external_dispatch_wei` remains zero. Tests assert this across winning, invalid, inconclusive, unrevealed and expiry paths.
+After a dispatch:
 
-The unresolved boundary is intentional: an external message can be submitted separately from the parent Intelligent Contract transaction, and an ambiguous or failed child cannot currently be authenticated by a later V2 write without risking either double payment or stranded credit. Therefore V2 does not accept a deposit and does not mark a credit paid.
+`accepted_wei = outstanding_wei + total_dispatched`
+
+`credited_wei` is the cumulative sum of internal entitlements created by terminal state transitions. It is not additional money. Settlement moves liability from a case/attempt to a wallet credit without changing total outstanding liability. Withdrawal clears only the recipient's credit, decreases outstanding liability, increments the dispatch ledger and emits the native EVM transfer request. Tests assert this across winning, invalid, inconclusive, unrevealed, expiry and withdrawal paths.
+
+The ordinary boundary is explicit: an external message can be submitted separately from the parent Intelligent Contract transaction. V2 records `EMITTED_UNCONFIRMED` and does not pretend the child receipt is synchronously available; it performs no automatic retry or re-credit. The external child transaction/receipt is independently observable evidence.
 
 ## Exact versions and network
 
@@ -65,7 +71,7 @@ The unit harness is deterministic and labelled as such. Direct Mode is the runti
 
 ## V2 deployment
 
-The active deployer sends one contract only and refuses non-61999 targets, a non-local CLI, ambiguous retries, or a post-deploy config that is not `SINGLE_IC`, funding-disabled and withdrawal-disabled.
+The active deployer sends one contract only and refuses non-61999 targets, a non-local CLI, ambiguous retries, or a post-deploy config that is not `SINGLE_IC`, native-funded and EVM-dispatch enabled. Running it broadcasts a real transaction and requires explicit approval of signer, scope and maximum test expenditure.
 
 ```powershell
 npm run deploy:61999 -- --deploy
@@ -73,9 +79,9 @@ npm run source:verify
 npm run reconcile:v2
 ```
 
-The script writes gitignored `receipt-v2-deployment.state.json`, `receipt-v2-deployment.manifest.json` and `frontend/.env.local` only after it proves finality and the fresh treasury/config readback. It never enables funding. The old `tools/deploy-studionet.mjs` entry point is a retired V1 guard and cannot deploy the two-contract architecture.
+The script writes gitignored `receipt-v2-deployment.state.json`, `receipt-v2-deployment.manifest.json` and `frontend/.env.local` only after it proves finality and the fresh treasury/config readback. The old `tools/deploy-studionet.mjs` entry point is a retired V1 guard and cannot deploy the two-contract architecture.
 
-`npm run reconcile:v2` is read-only and reports `DISABLED_NO_DISPATCH` for a verified V2 manifest. The existing `reconcile:withdrawal` command is retained as a V1 historical evidence parser; it must not be used as V2 payment proof.
+`npm run reconcile:v2` is read-only and reports `DISPATCH_READY` for a verified funded V2 manifest. The existing `reconcile:withdrawal` command is retained as a V1 historical evidence parser; it must not be used as V2 payment proof.
 
 ## Frontend environment
 
@@ -84,12 +90,12 @@ The active app uses one public address:
 ```text
 NEXT_PUBLIC_RECEIPT_V2_ADDRESS=0x...
 NEXT_PUBLIC_EXPLORER_URL=https://explorer-studio.genlayer.com
-NEXT_PUBLIC_FUNDING_ENABLED=false
+NEXT_PUBLIC_FUNDING_ENABLED=true
 ```
 
 Optional V1 history-only variables are named `NEXT_PUBLIC_HISTORICAL_PROOF_ENGINE_ADDRESS` and `NEXT_PUBLIC_HISTORICAL_PROMISE_VAULT_ADDRESS`. Never put private keys or signing secrets in `NEXT_PUBLIC_*` variables.
 
-The UI reads finalized V2 state, enforces the injected-wallet chain check, provides commit/reveal/adjudication/recovery actions, and shows internal credits as not withdrawable. It does not display an unverified external dispatch as a payment.
+The UI reads finalized V2 state, enforces the injected-wallet chain check, provides commit/reveal/adjudication/recovery actions, shows claimable GEN, and submits recipient withdrawal through the same V2 address. It displays the dispatch as `EMITTED_UNCONFIRMED` and links the user to independent receipt verification; it does not invent receipt success.
 
 ## Evidence and limitations
 
@@ -101,6 +107,6 @@ The authoritative reviewer material is in:
 - [`docs/V2_EVIDENCE.md`](docs/V2_EVIDENCE.md) — deployed address, source hash, preview and automated evidence snapshot.
 - [`docs/PROTOCOL.md`](docs/PROTOCOL.md) and [`docs/LIVE_VALIDATION.md`](docs/LIVE_VALIDATION.md) — V1 historical protocol/evidence, not V2 certification.
 
-No 5/5/5/5 score, custody safety, production cutover or successful V2 payout is claimed until the missing live proof exists. A source digest proves exact bytes, not authorship, deployment authenticity or whole-system behavior.
+No live 5/5/5/5 score, production cutover or successful V2 payout is claimed until the approved final deployment and lifecycle evidence exist. A source digest proves exact bytes, not authorship, deployment authenticity or whole-system behavior.
 
 MIT licensed. See [`LICENSE`](LICENSE).

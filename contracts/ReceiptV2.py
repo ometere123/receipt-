@@ -1,9 +1,10 @@
 # { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
 """RECEIPT! V2 single-contract claim registry and atomic adjudication.
 
-No secondary Intelligent Contract or settlement callback exists. New GEN funding
-and external withdrawals deliberately remain disabled until the real EVM failure
-reconciliation risk can be resolved without unsafe retries.
+No secondary Intelligent Contract or settlement callback exists. Native GEN
+funding and withdrawals use the platform EVM interface directly. A withdrawal
+is recorded as an emitted dispatch; the contract does not pretend that the
+external child receipt is synchronously available to contract code.
 """
 from genlayer import *
 from datetime import datetime, timezone
@@ -12,6 +13,14 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import re
+
+
+@gl.evm.contract_interface
+class _Receiver:
+    class View:
+        pass
+    class Write:
+        pass
 
 
 def _fail(message: str) -> None:
@@ -126,12 +135,10 @@ class ReceiptV2(gl.Contract):
     verdicts: TreeMap[str, str]
 
     def __init__(self):
-        # External GEN transfer failure/recovery is not proven on Studionet.
-        # Replacement deployments remain custody-safe by default: existing
-        # credits remain readable/withdrawable, but new irreversible bounties
-        # cannot be created until a separately reviewed payout mechanism is
-        # available. There is intentionally no public enable switch.
-        self.funding_enabled = False
+        # V2 is the sole active custody and adjudication contract. Native GEN
+        # enters through payable methods and leaves through the established EVM
+        # receiver interface; no child Intelligent Contract is involved.
+        self.funding_enabled = True
         self.case_count = u64(0)
         self.attempt_count = u64(0)
         self.accepted_wei = u256(0)
@@ -144,9 +151,9 @@ class ReceiptV2(gl.Contract):
     def get_config(self) -> str:
         return _save({'architecture': 'SINGLE_IC', 'engine_ready': True, 'chain': 61999,
                       'funding_enabled': self.funding_enabled,
-                      'funding_mode': 'FAIL_CLOSED_UNTIL_PAYOUT_PROOF',
-                      'withdrawal_status': 'DISABLED_FAIL_CLOSED',
-                      'external_messages': 'UNVERIFIED_ON_STUDIO',
+                      'funding_mode': 'NATIVE_GEN',
+                      'withdrawal_status': 'EVM_DISPATCH_EMITTED_UNCONFIRMED',
+                      'external_messages': 'EVM_INTERFACE',
                       'minimum_bounty_wei': str(10 ** 15),
                       'commit_reveal_seconds': 7200,
                       'pending_timeout_seconds': 604800})
@@ -233,10 +240,6 @@ class ReceiptV2(gl.Contract):
             _fail('full lowercase Git commit required')
         if not re.fullmatch(r'[0-9a-f]{64}', doc_digest) or not re.fullmatch(r'[0-9a-f]{64}', source_digest):
             _fail('SHA-256 digests required')
-        # Refuse deposits until the adjudicator is permanently bound to this
-        # precise vault. A misconfigured pair must never lock user funds.
-        if not self.funding_enabled:
-            _fail('live funding disabled; external GEN receipt recovery is unproven')
         bounty = int(gl.message.value)
         if bounty < 10 ** 15 or bounty > 10 ** 24:
             _fail('bounty out of range')
@@ -258,10 +261,8 @@ class ReceiptV2(gl.Contract):
             _fail('commitment requires direct EOA caller')
         if int(gl.message.chain_id) != 61999:
             _fail('Studionet 61999 required')
-        # A challenger bond is also new value entering the custody system.
-        # Keep it behind the same permanent safety gate as bounty funding.
-        if not self.funding_enabled:
-            _fail('live funding disabled; external GEN receipt recovery is unproven')
+        # A challenger bond is also native GEN entering this contract's
+        # liability ledger.
         case = self._require_case(case_id)
         if case['status'] != 'OPEN' or _now() >= case['deadline']:
             _fail('case closed or expired')
@@ -421,12 +422,31 @@ class ReceiptV2(gl.Contract):
 
     @gl.public.write
     def withdraw(self) -> None:
-        """Fail closed: no EVM transfer is emitted until verified failure recovery exists.
+        """Dispatch the caller's full internal credit to that same EOA.
 
-        This V2 source is an experimental migration, NOT an enabled custody product.
-        Historical V1 balances stay at V1; no caller or admin can transfer them here.
+        GenVM records the dispatch and updates the internal ledger atomically;
+        the external EVM child receipt is not synchronously returned to this
+        contract. Consequently, ``EMITTED_UNCONFIRMED`` is the honest dispatch
+        status and no automatic re-credit or retry is attempted.
         """
-        _fail('V2 external withdrawals disabled: safe EVM receipt recovery not established')
+        recipient = gl.message.sender_address
+        amount = int(self.credits.get(recipient, u256(0)))
+        if amount <= 0:
+            _fail('nothing to withdraw')
+        if amount > int(self.outstanding):
+            _fail('accounting invariant violated')
+        if gl.message.sender_address != gl.message.origin_address:
+            _fail('withdraw requires direct EOA caller')
+        self.dispatch_count = u64(int(self.dispatch_count) + 1)
+        dispatch_id = int(self.dispatch_count)
+        self.dispatches[_key(dispatch_id)] = _save({
+            'id': dispatch_id, 'recipient': recipient.as_hex.lower(),
+            'amount_wei': str(amount), 'status': 'EMITTED_UNCONFIRMED',
+            'created_at': _now()})
+        self.credits[recipient] = u256(0)
+        self.outstanding = u256(int(self.outstanding) - amount)
+        self.total_dispatched = u256(int(self.total_dispatched) + amount)
+        _Receiver(recipient).emit_transfer(value=u256(amount))
 
     def _credit(self, who: str, amount: int) -> None:
         if amount <= 0:

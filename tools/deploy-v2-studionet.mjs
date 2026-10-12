@@ -133,8 +133,8 @@ async function main() {
 
   const contract = deploy(state);
   const config = run(['call', contract.address, 'get_config']);
-  if (!/SINGLE_IC/i.test(config) || !/funding_enabled[\\"']?\s*[:=]\s*false/i.test(config) || !/DISABLED_FAIL_CLOSED/i.test(config)) {
-    throw Error('ReceiptV2 post-deploy safety readback failed; funding must remain disabled.');
+  if (!/SINGLE_IC/i.test(config) || !/funding_enabled[\\"']?\s*[:=]\s*true/i.test(config) || !/NATIVE_GEN/i.test(config) || !/EVM_DISPATCH_EMITTED_UNCONFIRMED/i.test(config)) {
+    throw Error('ReceiptV2 post-deploy funded configuration readback failed.');
   }
   const treasury = run(['call', contract.address, 'get_treasury_status']);
   if (!/accepted_wei[\\"']?\s*[:=]\s*[\\"']?0|outstanding_wei[\\"']?\s*[:=]\s*[\\"']?0/i.test(treasury)) throw Error('Fresh ReceiptV2 treasury is not zero; deployment evidence is inconsistent.');
@@ -142,12 +142,12 @@ async function main() {
     project: 'RECEIPT!', architecture: 'SINGLE_IC', chain_id: 61999,
     rpc: network.rpc, signer, source_sha256: sourceHashes,
     receipt_v2: { address: contract.address, deploy_tx: contract.hash },
-    funding_enabled: false, withdrawal_status: 'DISABLED_FAIL_CLOSED',
+    funding_enabled: true, withdrawal_status: 'EVM_DISPATCH_EMITTED_UNCONFIRMED',
     verified_at: new Date().toISOString(),
   };
   writeFileSync('receipt-v2-deployment.manifest.json', JSON.stringify(manifest, null, 2) + '\n');
-  writeFileSync('frontend/.env.local', `NEXT_PUBLIC_RECEIPT_V2_ADDRESS=${contract.address}\nNEXT_PUBLIC_EXPLORER_URL=https://explorer-studio.genlayer.com\nNEXT_PUBLIC_FUNDING_ENABLED=false\nNEXT_PUBLIC_HISTORICAL_PROOF_ENGINE_ADDRESS=0xa2E4DaFe86229e6A3d1C92C6dCEb680dd4a55128\nNEXT_PUBLIC_HISTORICAL_PROMISE_VAULT_ADDRESS=0x6A5366Dcc45E6fb137534BA09f44632593c18880\n`);
-  console.log(`ReceiptV2 finalized at ${contract.address}. Funding and withdrawals remain disabled by verified safety gate.`);
+  writeFileSync('frontend/.env.local', `NEXT_PUBLIC_RECEIPT_V2_ADDRESS=${contract.address}\nNEXT_PUBLIC_EXPLORER_URL=https://explorer-studio.genlayer.com\nNEXT_PUBLIC_FUNDING_ENABLED=true\nNEXT_PUBLIC_HISTORICAL_PROOF_ENGINE_ADDRESS=0xa2E4DaFe86229e6A3d1C92C6dCEb680dd4a55128\nNEXT_PUBLIC_HISTORICAL_PROMISE_VAULT_ADDRESS=0x6A5366Dcc45E6fb137534BA09f44632593c18880\n`);
+  console.log(`ReceiptV2 finalized at ${contract.address}. Native GEN funding and EVM-interface withdrawals are enabled.`);
 }
 
 main().catch(error => { console.error('DEPLOY BLOCKED:', error.message); process.exitCode = 1; });

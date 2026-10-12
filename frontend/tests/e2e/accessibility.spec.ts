@@ -31,7 +31,7 @@ test('primary views have no WCAG 2A or 2AA violations', async ({ page }) => {
   await expectWcagViolationsToBeEmpty(page);
 
   const views = [
-    { button: 'Funding gate', marker: /What promise are we testing/i },
+    { button: 'Review configuration', marker: /What promise are we testing/i },
     { button: 'My desk', marker: /Connect your investigator wallet/i },
     { button: 'Receipt wall', marker: /Waiting for the first verified receipt/i },
     { button: 'How it works', marker: /not a general security audit/i },

@@ -1,50 +1,53 @@
 # V2 evidence manifest
 
-Recorded 2026-10-12 from the active deployed ReceiptV2 source snapshot `7e9942fd182a57c152ed517dbb305f8703cc395e` and latest frontend evidence commit `c7efd9e5cb1fa702b911b96e84db0996aa5f1409`.
+Recorded 2026-10-12 for branch `v2-final-funded`. This file separates local implementation evidence from the final StudioNet evidence that still requires explicit deployment approval.
 
 ## Source and chain
 
-| Field | Verified value |
+| Field | Value |
 | --- | --- |
-| Active contract source snapshot | `7e9942fd182a57c152ed517dbb305f8703cc395e` |
-| Network | GenLayer StudioNet, chain `61999` |
+| Active source | `contracts/ReceiptV2.py` |
+| Network target | GenLayer StudioNet, chain `61999` |
 | RPC | `https://studio.genlayer.com/api` |
-| Active contract | `0xa61EC599648782b2286eccd7e6e66971314D833A` |
-| Deployment tx | `0x0d97e0fe016df6ed45472016c72b5b6ef678d84a5a81fe246e3f500b31ed28cd` |
-| `contracts/ReceiptV2.py` SHA-256 | `507c15b977f660014af663ef8371fa9b873c7f8a3c1f373815c4a356afa46a91` |
-| Source parity | `exact_bytes=true` via `gen_getContractCode` |
-| Live config | `SINGLE_IC`, `funding_enabled=false`, `DISABLED_FAIL_CLOSED` |
-| Genesis treasury | accepted/credited/outstanding/dispatch = `0` |
+| Architecture | `SINGLE_IC` |
+| Funding mode | `NATIVE_GEN` |
+| Withdrawal status | `EVM_DISPATCH_EMITTED_UNCONFIRMED` |
+| Final funded address | Pending approved deployment |
+| Final deployment tx | Pending approved deployment |
+| Final source parity | Pending approved deployment |
 
-## Frontend preview
+The previous fail-closed deployment at `0xa61EC599648782b2286eccd7e6e66971314D833A` and deployment transaction `0x0d97e0fe016df6ed45472016c72b5b6ef678d84a5a81fe246e3f500b31ed28cd` are retained as historical evidence only; they do not match this funded source release.
 
-| Field | Verified value |
-| --- | --- |
-| Vercel project | `delealufejoel-4184s-projects/receipt` |
-| Root directory | `frontend` |
-| Preview | https://receipt-9mlooobkj-delealufejoel-4184s-projects.vercel.app |
-| Preview deployment | `dpl_Q56A6ei2i1vxQACVg8sVnykEtdF7` |
-| Preview source commit | `c7efd9e5cb1fa702b911b96e84db0996aa5f1409` |
-| Preview smoke | Protected deployment verified with `vercel curl`: `/api/build-info` reports V2 + historical addresses; HTML shows V2 safety gate and V1 history tab |
-| Production alias | Unchanged; no V2 production env or promotion performed |
+## Local automated evidence
 
-## Automated evidence
-
-- ReceiptV2 unit tests: `104 passed`, including targeted verdict-field mutations,
-  malformed-input, timing-boundary, unavailable-source and exact-accounting cases.
-- GenVM Direct Mode tests: `16 passed`.
-- ReceiptV2 linter and semantic validation: `3 checks passed`.
-- RPC preflight: exact 61999 passed.
+- ReceiptV2 unit tests: `106 passed`.
+- GenVM Direct Mode suite: `25 passed`, including funding, sponsor/challenger commit/reveal, source fetching, positive contradiction, `NOT_ESTABLISHED`, malformed/unavailable neutral, malicious leader, duplicates, timeout/recovery, recipient withdrawal and wrong wallet/network.
+- ReceiptV2 lint and semantic validation: `3 checks passed`.
 - Frontend Vitest: `14 passed`.
-- [GitHub Actions run 38194780838](https://github.com/ometere123/receipt-/actions/runs/38194780838): frontend, contract-unit, browser and genvm-direct jobs all succeeded.
 - Frontend typecheck, ESLint and production build: passed.
-- Playwright: `12 passed` with the real V2 local env after a fresh build.
-- V2 reconciliation: `DISABLED_NO_DISPATCH`, read-only, no writes.
+- Playwright browser suite: `12 passed`, including accessibility and explicit configuration/wallet/history behavior.
+- Withdrawal reconciliation fixtures: `5 passed`; read-only and no writes.
 
-## Negative evidence / limits
+## Frontend configuration
 
-- No V2 bounty, bond or withdrawal was sent.
-- No V2 external GEN payment success, failure or ambiguity proof exists.
-- Funding and withdrawals remain disabled by contract state and Vercel flag.
-- V1 deployment/credits remain historical and are not migrated.
-- Previous V2 deployment `0x8A157...` remains an empty superseded candidate; the active address above is the parity-verified replacement.
+The Vercel project is `delealufejoel-4184s-projects/receipt`, rooted at `frontend`. The final deployment must set:
+
+```text
+NEXT_PUBLIC_RECEIPT_V2_ADDRESS=<approved-funded-v2-address>
+NEXT_PUBLIC_FUNDING_ENABLED=true
+NEXT_PUBLIC_EXPLORER_URL=https://explorer-studio.genlayer.com
+```
+
+The historical ProofEngine and PromiseVault variables remain optional read-only V1 history configuration. No V1 write is used by the active app.
+
+## Pending live evidence
+
+- Explicit approval: signer, transaction scope and maximum test expenditure.
+- Finalized funded deployment and exact source parity.
+- Zero genesis treasury/config readback.
+- Sponsor funding, challenger commit/reveal, positive adjudication, claimable credit and recipient withdrawal.
+- External child transaction/receipt evidence, with the V2 dispatch record and conservation counters.
+- `NOT_ESTABLISHED`, malformed/unavailable neutral, malicious leader, duplicate/unauthorized, timeout/recovery and wrong-wallet/network evidence.
+- Browser verification of connect/disconnect, chain 61999, source digests, backup reveal, adjudication, verdict, claimable GEN, withdrawal, V1 history and error/layout behavior.
+
+No live transaction, final address, successful payout or production promotion is claimed in this document before those gates are completed.

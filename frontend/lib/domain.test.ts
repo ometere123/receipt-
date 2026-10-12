@@ -21,5 +21,5 @@ describe('money and evidence integrity', () => {
     expect(x).not.toBe(y);
     expect(x).toMatch(/^[a-f0-9]{64}$/);
   });
-  it('exposes V2 recovery and fail-closed withdrawal states',()=>{expect(statusLabel('RECOVERED')).toBe('Bond recovered');expect(statusLabel('DISABLED_FAIL_CLOSED')).toMatch(/fail closed/);});
+  it('exposes V2 recovery and native withdrawal states',()=>{expect(statusLabel('RECOVERED')).toBe('Bond recovered');expect(statusLabel('EVM_DISPATCH_EMITTED_UNCONFIRMED')).toMatch(/dispatch emitted/);});
 });

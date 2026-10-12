@@ -10,6 +10,7 @@ export interface InjectedProvider {
   removeListener?(event: string, cb: (...args: unknown[]) => void): void;
 }
 export interface TreasuryStatus { accepted_wei: string; credited_wei: string; outstanding_wei: string; external_dispatch_wei: string; dispatch_count: number; ghost_balance_wei: string; }
+export interface DispatchRecord { id: number; recipient: string; amount_wei: string; status: string; created_at: number; }
 declare global { interface Window { ethereum?: InjectedProvider } }
 export function injected(): InjectedProvider | null { return typeof window === 'undefined' ? null : window.ethereum || null; }
 export const publicClient = createClient({ chain: studionet });
@@ -38,6 +39,7 @@ export async function casesPage(offset = 0, limit = 24) { return parseJSON<Recei
 export async function caseById(id: number) { const r = await read('get_case', [id]); return r ? parseJSON<ReceiptCase>(r) : null; }
 export async function attemptById(id: number) { const r = await read('get_attempt', [id]); return r ? parseJSON<ReceiptAttempt>(r) : null; }
 export async function creditOf(addr: string) { return BigInt(String(await read('get_credit', [addr]))); }
+export async function dispatchById(id: number) { const r = await read('get_dispatch', [id]); return r ? parseJSON<DispatchRecord>(r) : null; }
 export async function receiptVerdict(id: number) { return String(await read('get_verdict', [id])); }
 export async function walletAddress(): Promise<string> {
   const p = injected(); if (!p) throw new Error('No injected EIP-1193 wallet found. Install or open a compatible wallet.');

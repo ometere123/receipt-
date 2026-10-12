@@ -1,6 +1,6 @@
 # V2 single-contract safety review
 
-Status: **NOT_READY for live funding/withdrawals; safe fail-closed candidate.**
+Status: **Funded implementation complete; final StudioNet deployment pending explicit signer/scope/spend approval.**
 
 ## Scope
 
@@ -17,7 +17,8 @@ ReceiptV2 owns:
 - `CONTRADICTED`, `NOT_ESTABLISHED`, `OUT_OF_SCOPE` and `INCONCLUSIVE` normalization;
 - terminal settlement, expiry, unrevealed-forfeit and seven-day pending recovery;
 - wallet credits and accepted/credited/outstanding conservation counters;
-- fail-closed funding and withdrawal policy.
+- native GEN funding through payable entrypoints;
+- recipient-only native GEN withdrawal dispatch and explicit dispatch records.
 
 No method calls another Intelligent Contract. There is no binding handshake, verdict callback, resend operation, tombstone, admin override or public funding activation method.
 
@@ -38,19 +39,23 @@ Only the active attempt can transition a case. Assessment and entitlement creati
 
 ## Conservation invariant
 
-For every accepted bounty or bond:
+Before a recipient withdrawal:
 
 ```text
 accepted_wei == outstanding_wei
 ```
 
-while external dispatch is disabled. `_credit()` increases `credited_wei` and a wallet entitlement but never creates value or reduces outstanding liability. The tests assert the invariant across every terminal branch. `total_dispatched` remains zero because the contract does not attempt an unsafe EVM payment.
+`_credit()` increases `credited_wei` and a wallet entitlement but never creates value or reduces outstanding liability. A successful withdrawal dispatch clears the recipient credit, reduces `outstanding`, increments `total_dispatched`, and emits `emit_transfer(value=amount)`. After dispatch:
 
-## Payout boundary decision
+```text
+accepted_wei == outstanding_wei + total_dispatched
+```
 
-The official GenLayer message/value-transfer model separates Intelligent Contract finality from the external EVM/ghost message. The current evidence does not provide an authenticated on-chain receipt callback or safe failed-child compensation for one IC on StudioNet. An off-chain observer cannot authorize a later recredit or clear operation without a duplicate-payment race.
+The dispatch record is `EMITTED_UNCONFIRMED`: it proves the contract emitted the external transfer request, not that the child receipt has already been observed by contract code. The contract performs no automatic retry or re-credit.
 
-Decision: **do not accept funds and do not emit withdrawals** until a protocol-supported proof channel is independently demonstrated on chain 61999. The smallest supported alternative is a non-custodial verdict/entitlement registry with an externally operated, separately reviewed payout rail; that would no longer be an exactly-one-component custody solution and requires explicit architectural approval.
+## Payout boundary
+
+Native GEN funding and the ordinary recipient withdrawal path are part of V2. The parent Intelligent Contract transaction and the external EVM child are separate observable records. V2 therefore exposes the dispatch status honestly and leaves child receipt observation to deployment/reconciliation evidence; it does not infer child success, issue an automatic retry, or perform an untrusted re-credit.
 
 ## Release gates
 
@@ -58,8 +63,8 @@ Required before changing the status to READY:
 
 1. Exact source parity against a finalized 61999 ReceiptV2 deployment.
 2. Direct Mode and adversarial unit coverage for all transitions, malformed model results, digest drift, wrong caller/chain, duplicate/race attempts and conservation.
-3. A protocol-supported, authenticated external-payment outcome channel with forced success, failure and ambiguous cases, proving no duplicate payout and no stranded entitlement.
-4. V2 frontend preview verification with one address, no V1 writes, explicit withdrawal status and historical V1 read-only access.
-5. Only after 1–4: production env update and any release alias change.
+3. Finalized StudioNet lifecycle: sponsor, challenge, positive adjudication, recipient dispatch, external child evidence, and conservation readback.
+4. Negative/neutral cases: malformed or unavailable source, `NOT_ESTABLISHED`, malicious leader, duplicate/unauthorized actions, timeout recovery, wrong wallet/network.
+5. V2 frontend verification with one address, native withdrawal status and historical V1 read-only access; only then update production env/aliases.
 
 Until then, scores must remain `NOT_READY`; green local tests do not upgrade the payout boundary.

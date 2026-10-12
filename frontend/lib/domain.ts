@@ -95,4 +95,4 @@ export async function loadEvidence(d: CaseDraft | ReceiptCase) {
   const source = new TextDecoder('utf-8', { fatal: true }).decode(sb);
   return { doc, source, doc_digest: await sha256Hex(new Uint8Array(db)), source_digest: await sha256Hex(new Uint8Array(sb)) };
 }
-export const statusLabel = (s: string) => ({ OPEN: 'Open case', PENDING: 'Under review', WON: 'Receipt found', EXPIRED: 'Expired', COMMITTED: 'Reveal needed', SETTLED: 'Settled', FORFEITED: 'Bond forfeited', RECOVERED: 'Bond recovered', DISABLED_FAIL_CLOSED: 'Withdrawals disabled · fail closed' }[s] || s);
+export const statusLabel = (s: string) => ({ OPEN: 'Open case', PENDING: 'Under review', WON: 'Receipt found', EXPIRED: 'Expired', COMMITTED: 'Reveal needed', SETTLED: 'Settled', FORFEITED: 'Bond forfeited', RECOVERED: 'Bond recovered', EVM_DISPATCH_EMITTED_UNCONFIRMED: 'Withdrawal dispatch emitted' }[s] || s);
