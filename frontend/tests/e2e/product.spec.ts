@@ -28,6 +28,9 @@ test('funding gate keeps unsafe deposits unavailable without hiding the workflow
   await expect(page.getByText(/Bounty in GEN/i)).toBeVisible();
   await expect(page.getByText(/Funding is technically disabled/i)).toBeVisible();
   await expect(page.getByRole('button',{name:'Fund & publish'})).toHaveCount(0);
+  await page.getByRole('button',{name:'Receipt home'}).click();
+  await expect(page.getByText(/Credits remain fail-closed/i)).toBeVisible();
+  await expect(page.getByText(/Validators decide, you collect/i)).toHaveCount(0);
 });
 
 test('investigator desk demands a wallet', async ({page}) => {
