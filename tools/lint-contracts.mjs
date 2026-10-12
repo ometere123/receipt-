@@ -13,7 +13,10 @@ const env = {
   PYTHONIOENCODING: 'utf-8',
 };
 
-for (const contract of ['contracts/ProofEngine.py', 'contracts/PromiseVault.py']) {
+// V2 is the only active deployable contract. The V1 pair remains in the
+// repository solely for historical source review and is intentionally not
+// part of the current lint/deploy gate.
+for (const contract of ['contracts/ReceiptV2.py']) {
   const result = spawnSync(command, ['check', contract], { stdio: 'inherit', env });
   if (result.error) throw result.error;
   if (result.status !== 0) process.exit(result.status ?? 1);

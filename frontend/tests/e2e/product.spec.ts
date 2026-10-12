@@ -9,7 +9,7 @@ test('product renders without fictional on-chain cases', async ({page}) => {
 
 test('deployment state is explicitly unconfigured', async ({page}) => {
   await page.goto('/');
-  await expect(page.getByText('Deployment not configured.',{exact:false})).toBeVisible();
+  await expect(page.getByText(/V2 deployment not configured/i)).toBeVisible();
   await expect(page.getByText(/not a simulated chain/i)).toBeVisible();
 });
 

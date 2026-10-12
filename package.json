@@ -6,10 +6,11 @@
   "scripts": {
     "cli": "genlayer",
     "preflight": "node tools/preflight.mjs",
-    "deploy:61999": "node tools/deploy-studionet.mjs",
+    "deploy:61999": "node tools/deploy-v2-studionet.mjs",
     "test:contracts": "python -m pytest -q tests/unit",
     "test:direct": "python -m pytest -v tests/direct",
     "source:verify": "node tools/verify-deployed-source.mjs",
+    "reconcile:v2": "node tools/reconcile-v2-withdrawal.mjs",
     "reconcile:withdrawal": "node tools/reconcile-withdrawal.mjs",
     "test:reconciliation": "node --test tools/reconcile-withdrawal.test.mjs",
     "lint:contracts": "node tools/lint-contracts.mjs",

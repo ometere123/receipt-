@@ -10,6 +10,12 @@ jobs:
       - run: python -m pip install -r requirements.txt
       - run: python -m compileall -q contracts tests
       - run: pytest -q tests/unit
+      - run: node --check tools/preflight.mjs
+      - run: node --check tools/deploy-v2-studionet.mjs
+      - run: node --check tools/verify-deployed-source.mjs
+      - run: npm ci --no-audit --no-fund
+      - run: npm run test:reconciliation
+      - run: npm run lint:contracts
   genvm-direct:
     runs-on: ubuntu-latest
     env:
@@ -20,8 +26,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - run: python -m pip install -r requirements.txt
-      - run: genvm-lint check contracts/ProofEngine.py
-      - run: genvm-lint check contracts/PromiseVault.py
+      - run: genvm-lint check contracts/ReceiptV2.py
       - run: pytest tests/direct -v
   frontend:
     runs-on: ubuntu-latest

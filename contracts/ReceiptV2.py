@@ -14,14 +14,6 @@ import json
 import re
 
 
-@gl.evm.contract_interface
-class _Receiver:
-    class View:
-        pass
-    class Write:
-        pass
-
-
 def _fail(message: str) -> None:
     raise gl.vm.UserError(message)
 
@@ -125,6 +117,8 @@ class ReceiptV2(gl.Contract):
     cases: TreeMap[str, str]
     attempts: TreeMap[str, str]
     credits: TreeMap[Address, u256]
+    accepted_wei: u256
+    credited_wei: u256
     outstanding: u256
     total_dispatched: u256
     dispatch_count: u64
@@ -140,6 +134,8 @@ class ReceiptV2(gl.Contract):
         self.funding_enabled = False
         self.case_count = u64(0)
         self.attempt_count = u64(0)
+        self.accepted_wei = u256(0)
+        self.credited_wei = u256(0)
         self.outstanding = u256(0)
         self.total_dispatched = u256(0)
         self.dispatch_count = u64(0)
@@ -148,7 +144,9 @@ class ReceiptV2(gl.Contract):
     def get_config(self) -> str:
         return _save({'architecture': 'SINGLE_IC', 'engine_ready': True, 'chain': 61999,
                       'funding_enabled': self.funding_enabled,
-                      'withdrawal_status': 'EXPERIMENTAL_UNCONFIRMED',
+                      'funding_mode': 'FAIL_CLOSED_UNTIL_PAYOUT_PROOF',
+                      'withdrawal_status': 'DISABLED_FAIL_CLOSED',
+                      'external_messages': 'UNVERIFIED_ON_STUDIO',
                       'minimum_bounty_wei': str(10 ** 15),
                       'commit_reveal_seconds': 7200,
                       'pending_timeout_seconds': 604800})
@@ -188,8 +186,16 @@ class ReceiptV2(gl.Contract):
 
     @gl.public.view
     def get_treasury_status(self) -> str:
-        """The balance is recorded independently; dispatched is NOT received."""
-        return _save({'outstanding_wei': str(self.outstanding),
+        """Expose conservation counters without treating a dispatch as paid.
+
+        Production V2 never emits a dispatch. While the withdrawal gate is
+        closed, accepted value is exactly the outstanding liability. Credits
+        are internal entitlements inside that same liability, not a second
+        pool of funds.
+        """
+        return _save({'accepted_wei': str(self.accepted_wei),
+                      'credited_wei': str(self.credited_wei),
+                      'outstanding_wei': str(self.outstanding),
                       'external_dispatch_wei': str(self.total_dispatched),
                       'dispatch_count': int(self.dispatch_count),
                       'ghost_balance_wei': str(self.balance)})
@@ -244,12 +250,14 @@ class ReceiptV2(gl.Contract):
                 'status': 'OPEN', 'active_attempt': 0, 'winner': '',
                 'won_attempt': 0, 'attempts': 0}
         self.cases[_key(case_id)] = _save(case)
-        self.outstanding = u256(int(self.outstanding) + bounty)
+        self._accept(bounty)
 
     @gl.public.write.payable
     def commit_attempt(self, case_id: int, commitment: str) -> None:
         if gl.message.sender_address != gl.message.origin_address:
             _fail('commitment requires direct EOA caller')
+        if int(gl.message.chain_id) != 61999:
+            _fail('Studionet 61999 required')
         # A challenger bond is also new value entering the custody system.
         # Keep it behind the same permanent safety gate as bounty funding.
         if not self.funding_enabled:
@@ -277,12 +285,14 @@ class ReceiptV2(gl.Contract):
         case['active_attempt'] = aid
         case['attempts'] += 1
         self.cases[_key(case_id)] = _save(case)
-        self.outstanding = u256(int(self.outstanding) + bond)
+        self._accept(bond)
 
     @gl.public.write
     def reveal_attempt(self, attempt_id: int, salt: str, anchor: str, thesis: str) -> None:
         if gl.message.sender_address != gl.message.origin_address:
             _fail('reveal requires direct EOA caller')
+        if int(gl.message.chain_id) != 61999:
+            _fail('Studionet 61999 required')
         attempt = self._require_attempt(attempt_id)
         case = self._require_case(attempt['case_id'])
         claimant = gl.message.sender_address.as_hex.lower()
@@ -353,6 +363,8 @@ class ReceiptV2(gl.Contract):
 
     @gl.public.write
     def settle_unrevealed(self, attempt_id: int) -> None:
+        if int(gl.message.chain_id) != 61999:
+            _fail('Studionet 61999 required')
         attempt = self._require_attempt(attempt_id)
         case = self._require_case(attempt['case_id'])
         if attempt['status'] != 'COMMITTED' or _now() <= attempt['reveal_by']:
@@ -376,6 +388,8 @@ class ReceiptV2(gl.Contract):
         finalized state. There is no verdict callback, tombstone child, or
         contradictory inter-contract settlement.
         """
+        if int(gl.message.chain_id) != 61999:
+            _fail('Studionet 61999 required')
         attempt = self._require_attempt(attempt_id)
         case = self._require_case(attempt['case_id'])
         if (attempt['status'] != 'PENDING' or case['status'] != 'PENDING'
@@ -396,6 +410,8 @@ class ReceiptV2(gl.Contract):
 
     @gl.public.write
     def expire_case(self, case_id: int) -> None:
+        if int(gl.message.chain_id) != 61999:
+            _fail('Studionet 61999 required')
         case = self._require_case(case_id)
         if case['status'] != 'OPEN' or case['active_attempt'] or _now() < case['deadline']:
             _fail('not freely expirable')
@@ -413,8 +429,18 @@ class ReceiptV2(gl.Contract):
         _fail('V2 external withdrawals disabled: safe EVM receipt recovery not established')
 
     def _credit(self, who: str, amount: int) -> None:
+        if amount <= 0:
+            _fail('credit amount must be positive')
         addr = Address(who)
         self.credits[addr] = u256(int(self.credits.get(addr, u256(0))) + amount)
+        self.credited_wei = u256(int(self.credited_wei) + amount)
+
+    def _accept(self, amount: int) -> None:
+        """Record value entering the liability ledger exactly once."""
+        if amount <= 0:
+            _fail('accepted amount must be positive')
+        self.accepted_wei = u256(int(self.accepted_wei) + amount)
+        self.outstanding = u256(int(self.outstanding) + amount)
 
     def _require_case(self, case_id: int) -> dict:
         raw = self.cases.get(_key(case_id), '')

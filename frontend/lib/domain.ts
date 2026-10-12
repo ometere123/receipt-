@@ -1,5 +1,5 @@
 export type CaseStatus = 'OPEN' | 'PENDING' | 'WON' | 'EXPIRED';
-export type AttemptStatus = 'COMMITTED' | 'PENDING' | 'RECOVERY_REQUESTED' | 'SETTLED' | 'FORFEITED' | 'RECOVERED';
+export type AttemptStatus = 'COMMITTED' | 'PENDING' | 'SETTLED' | 'FORFEITED' | 'RECOVERED';
 export type Verdict = 'CONTRADICTED' | 'NOT_ESTABLISHED' | 'OUT_OF_SCOPE' | 'INCONCLUSIVE';
 
 export interface ReceiptCase {
@@ -26,14 +26,21 @@ export interface RevealDraft {
   commitment: string; created_at: number;
 }
 export const CHAIN_ID = 61999;
-export const VAULT = (process.env.NEXT_PUBLIC_PROMISE_VAULT_ADDRESS || '').trim() as `0x${string}`;
-export const ENGINE = (process.env.NEXT_PUBLIC_PROOF_ENGINE_ADDRESS || '').trim() as `0x${string}`;
+// Active V2 is one Intelligent Contract. The old V1 addresses remain named
+// explicitly for historical read-only tooling and are never used by writes.
+export const RECEIPT_V2 = (process.env.NEXT_PUBLIC_RECEIPT_V2_ADDRESS || '').trim() as `0x${string}`;
+export const HISTORICAL_VAULT = (process.env.NEXT_PUBLIC_HISTORICAL_PROMISE_VAULT_ADDRESS || process.env.NEXT_PUBLIC_PROMISE_VAULT_ADDRESS || '').trim() as `0x${string}`;
+export const HISTORICAL_ENGINE = (process.env.NEXT_PUBLIC_HISTORICAL_PROOF_ENGINE_ADDRESS || process.env.NEXT_PUBLIC_PROOF_ENGINE_ADDRESS || '').trim() as `0x${string}`;
+// Compatibility alias for the existing component surface; both active reads
+// and writes resolve to the single V2 address.
+export const VAULT = RECEIPT_V2;
 export const EXPLORER = (process.env.NEXT_PUBLIC_EXPLORER_URL || 'https://explorer-studio.genlayer.com').replace(/\/$/, '');
 // Funding is opt-in even when addresses are configured. The replacement
 // vault also reports this gate on-chain; both must explicitly allow funding.
 export const FUNDING_ENABLED = process.env.NEXT_PUBLIC_FUNDING_ENABLED === 'true';
 export const isAddress = (s: string): s is `0x${string}` => /^0x[0-9a-fA-F]{40}$/.test(s);
-export const hasDeployment = () => isAddress(VAULT) && isAddress(ENGINE);
+export const hasDeployment = () => isAddress(RECEIPT_V2);
+export const hasHistoricalDeployment = () => isAddress(HISTORICAL_VAULT) && isAddress(HISTORICAL_ENGINE);
 export const addrShort = (s: string) => s ? `${s.slice(0, 6)}…${s.slice(-4)}` : '—';
 export const weiToGen = (wei: string | bigint | number) => {
   const v = BigInt(wei || '0');
@@ -88,4 +95,4 @@ export async function loadEvidence(d: CaseDraft | ReceiptCase) {
   const source = new TextDecoder('utf-8', { fatal: true }).decode(sb);
   return { doc, source, doc_digest: await sha256Hex(new Uint8Array(db)), source_digest: await sha256Hex(new Uint8Array(sb)) };
 }
-export const statusLabel = (s: string) => ({ OPEN: 'Open case', PENDING: 'Under review', WON: 'Receipt found', EXPIRED: 'Expired', COMMITTED: 'Reveal needed', RECOVERY_REQUESTED: 'Recovery requested', SETTLED: 'Settled', FORFEITED: 'Bond forfeited', RECOVERED: 'Bond recovered', EMITTED_UNCONFIRMED: 'Dispatch emitted · receipt unconfirmed' }[s] || s);
+export const statusLabel = (s: string) => ({ OPEN: 'Open case', PENDING: 'Under review', WON: 'Receipt found', EXPIRED: 'Expired', COMMITTED: 'Reveal needed', SETTLED: 'Settled', FORFEITED: 'Bond forfeited', RECOVERED: 'Bond recovered', DISABLED_FAIL_CLOSED: 'Withdrawals disabled · fail closed' }[s] || s);

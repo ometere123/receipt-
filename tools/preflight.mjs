@@ -18,7 +18,7 @@ export async function chainPreflight() {
   } finally {clearTimeout(timer);}
 }
 export function hashes() {
-  const files=['contracts/ProofEngine.py','contracts/PromiseVault.py'];
+  const files=['contracts/ReceiptV2.py'];
   return Object.fromEntries(files.map(f=>[f,createHash('sha256').update(readFileSync(f)).digest('hex')]));
 }
 if (process.argv[1] && process.argv[1].endsWith('preflight.mjs')) {

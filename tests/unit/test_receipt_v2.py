@@ -11,8 +11,11 @@ def one():
     return v
 
 def test_default_funding_off_and_withdrawal_off(one):
-    assert json.loads(one.get_config())['architecture']=='SINGLE_IC'
-    assert json.loads(one.get_config())['funding_enabled'] is False
+    config = json.loads(one.get_config())
+    assert config['architecture']=='SINGLE_IC'
+    assert config['funding_enabled'] is False
+    assert config['withdrawal_status']=='DISABLED_FAIL_CLOSED'
+    assert config['funding_mode']=='FAIL_CLOSED_UNTIL_PAYOUT_PROOF'
     MSG.value = 10**18
     with pytest.raises(UserError, match='live funding disabled'):
         one.create_case('Source claim','demo','repo','a'*40,'docs/claim.md','src/code.py',
@@ -48,10 +51,19 @@ def _prepared(one):
 
 def test_anyone_can_assess_and_settle_atomically(one):
     _prepared(one)
+    accepted = 10**18 + 5*10**16
+    treasury = json.loads(one.get_treasury_status())
+    assert treasury['accepted_wei'] == str(accepted)
+    assert treasury['outstanding_wei'] == str(accepted)
+    assert treasury['credited_wei'] == '0'
     MSG.sender_address=Address('0x'+'3'*40);MSG.origin_address=Address('0x'+'3'*40)
     assert one.adjudicate_attempt(1)=='CONTRADICTED'
     assert json.loads(one.get_case(1))['status']=='WON'
     assert one.get_credit(CLAIMANT)==str(10**18+5*10**16)
+    treasury = json.loads(one.get_treasury_status())
+    assert treasury['accepted_wei'] == str(accepted)
+    assert treasury['outstanding_wei'] == str(accepted)
+    assert treasury['credited_wei'] == str(accepted)
     assert json.loads(one.get_verdict(1))['verdict']=='CONTRADICTED'
     with pytest.raises(UserError,match='not an assessable'):
         one.adjudicate_attempt(1)
@@ -63,7 +75,64 @@ def test_single_state_recovery_prevents_late_settlement(one,monkeypatch):
     assert json.loads(one.get_attempt(1))['status']=='RECOVERED'
     assert one.get_credit(CLAIMANT)==str(5*10**16)
     assert one.get_credit(SPONSOR)==str(10**18)
+    treasury = json.loads(one.get_treasury_status())
+    assert treasury['accepted_wei'] == str(10**18 + 5*10**16)
+    assert treasury['outstanding_wei'] == str(10**18 + 5*10**16)
+    assert treasury['credited_wei'] == str(10**18 + 5*10**16)
     with pytest.raises(UserError,match='not an assessable'):
         one.adjudicate_attempt(1)
     with pytest.raises(UserError,match='not an active pending'):
         one.recover_pending(1)
+
+def test_malformed_result_is_neutralized_before_settlement():
+    digest = 'a' * 64
+    result = V2MOD._normalize_model_result('CONTRADICTED', True, False, True, digest, 'bad')
+    assert result['verdict'] == 'INCONCLUSIVE'
+    assert result['digest'] == ''
+    result = V2MOD._normalize_model_result('OUT_OF_SCOPE', False, False, False, digest, 'scope')
+    assert result['verdict'] == 'OUT_OF_SCOPE'
+    assert result['digest'] == digest
+    result = V2MOD._normalize_model_result('NOT_ESTABLISHED', True, True, False, digest, 'unproven')
+    assert result['verdict'] == 'NOT_ESTABLISHED'
+
+def test_commit_requires_studionet(one):
+    _prepared(one)
+    MSG.chain_id = 61997
+    MSG.sender_address = Address(CLAIMANT)
+    MSG.origin_address = Address(CLAIMANT)
+    with pytest.raises(UserError, match='Studionet 61999'):
+        one.commit_attempt(1, 'a' * 64)
+
+def test_unrevealed_settlement_preserves_conservation(one, monkeypatch):
+    one.funding_enabled = True
+    MSG.value = 10**18
+    one.create_case('Frozen source claim', 'demo', 'repo', 'a'*40,
+                    'docs/claim.md', 'src/code.py',
+                    'Our code always caps total fees at 2 percent.',
+                    '0'*64, '1'*64, 72)
+    MSG.sender_address = Address(CLAIMANT)
+    MSG.origin_address = Address(CLAIMANT)
+    MSG.value = 5*10**16
+    one.commit_attempt(1, 'a'*64)
+    MSG.value = 0
+    monkeypatch.setattr(V2MOD, '_now', lambda: 100000 + 7201)
+    one.settle_unrevealed(1)
+    assert json.loads(one.get_attempt(1))['status'] == 'FORFEITED'
+    assert one.get_credit(SPONSOR) == str(5 * 10**16)
+    treasury = json.loads(one.get_treasury_status())
+    assert treasury['accepted_wei'] == str(10**18 + 5*10**16)
+    assert treasury['outstanding_wei'] == str(10**18 + 5*10**16)
+    assert treasury['credited_wei'] == str(5*10**16)
+
+def test_expiry_refunds_bounty_without_double_credit(one, monkeypatch):
+    one.funding_enabled = True
+    MSG.value = 10**18
+    one.create_case('Frozen source claim', 'demo', 'repo', 'a'*40,
+                    'docs/claim.md', 'src/code.py',
+                    'Our code always caps total fees at 2 percent.',
+                    '0'*64, '1'*64, 72)
+    monkeypatch.setattr(V2MOD, '_now', lambda: 100000 + 72*3600 + 1)
+    one.expire_case(1)
+    assert one.get_credit(SPONSOR) == str(10**18)
+    with pytest.raises(UserError, match='not freely expirable'):
+        one.expire_case(1)
