@@ -7,10 +7,17 @@ test('product renders without fictional on-chain cases', async ({page}) => {
   await expect(page.getByText(/No cases on the board yet/i)).toBeVisible();
 });
 
-test('deployment state is explicitly unconfigured', async ({page}) => {
+test('deployment state is explicit and never fictional', async ({page}) => {
   await page.goto('/');
-  await expect(page.getByText(/V2 deployment not configured/i)).toBeVisible();
-  await expect(page.getByText(/not a simulated chain/i)).toBeVisible();
+  const configured = page.getByText(/V2 SAFETY GATE — FUNDING DISABLED/i);
+  const unconfigured = page.getByText(/V2 deployment not configured/i);
+  if (await configured.count()) {
+    await expect(configured).toBeVisible();
+    await expect(page.getByText(/external GEN recovery is not proven/i)).toBeVisible();
+  } else {
+    await expect(unconfigured).toBeVisible();
+    await expect(page.getByText(/not a simulated chain/i)).toBeVisible();
+  }
 });
 
 test('funding gate keeps unsafe deposits unavailable without hiding the workflow', async ({page}) => {
