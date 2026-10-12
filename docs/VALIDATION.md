@@ -5,22 +5,23 @@ This document is a test specification and evidence ledger, **not** an economic-s
 ## Current local evidence
 
 - Exact Python environment: Python 3.12, `genlayer-py 0.18.0`, `genlayer-test 0.29.2`, `genvm-linter 0.11.0`.
-- `pytest -q tests/unit`: 81 passed, including the exhaustive 24-case
-  verdict/flag settlement matrix.
-- `pytest -q tests/direct`: 15 passed in genuine Direct Mode, including a
-  real GenVM `Response.status` source-fetch/adjudication path, malformed-model
-  neutrality, callback authorization, duplicate settlement, recovery
-  confirmation and financial-conservation flows.
-- Fast `genvm-lint lint --json`: both contracts pass all 3 checks.
-- `npm run lint:contracts`: full lint and semantic validation pass for both contracts with `GENVM_VERSION=v0.3.0-rc7`; the output notes that a newer runner exists, but the pinned target is deliberate for the 61999 toolchain.
-- Frontend: typecheck passed, Vitest 14 passed, ESLint passed, `npm audit --omit=dev --audit-level=high` reports 0 high-severity findings, production build passed, and Playwright 11 passed against the built app, including the WCAG 2A/2AA primary-view regression gate. The CSS has existing Autoprefixer flex-start/flex-end compatibility warnings.
+- `pytest -q tests/unit`: 92 passed, including malformed-model, prompt-injection,
+  validator-disagreement and conservation coverage for the active V2 contract.
+- `pytest -q tests/direct`: 16 passed in genuine Direct Mode, including the
+  safe starting-state and fail-closed withdrawal checks.
+- `npm run lint:contracts`: the active `ReceiptV2.py` passes all 3 lint and
+  semantic-validation checks for the pinned 61999 toolchain.
+- Frontend: typecheck passed, Vitest 14 passed, ESLint passed, production build
+  passed, and Playwright 12 passed against the built app. The fresh browser
+  suite covers the V2 safety gate and explicit read-only V1 history viewer.
 - `npm run test:reconciliation`: 5 deterministic read-only payout-reconciliation fixtures pass, covering a successful receipt with `NO_MAJORITY`, a failed receipt, conflicting evidence, a missing child, and duplicate/idempotent observations. `npm run reconcile:withdrawal` performs the same collection against the pinned Studionet RPC without writes, retries or recredits.
-- A real Studionet 61999 deployment, exact source parity for the older
-  `de3cd57...` candidate, finalized child messages, two-wallet adjudication,
-  and one independently observed EVM payout receipt are recorded in
-  [`LIVE_VALIDATION.md`](LIVE_VALIDATION.md). The current replacement source
-  is intentionally not claimed as live-parity verified because no replacement
-  contract deployment was authorized.
+- The active replacement is deployed on Studionet 61999 at
+  `0xa61EC599648782b2286eccd7e6e66971314D833A`; deployment transaction
+  `0x0d97e0fe016df6ed45472016c72b5b6ef678d84a5a81fe246e3f500b31ed28cd`
+  finalized successfully, and `npm run source:verify` reports exact byte parity
+  for SHA-256 `507c15b977f660014af663ef8371fa9b873c7f8a3c1f373815c4a356afa46a91`.
+  Historical V1 lifecycle and payout evidence remains in
+  [`LIVE_VALIDATION.md`](LIVE_VALIDATION.md) and is not V2 proof.
 - The economic safety gate remains BLOCKED: the payout child reached
   `NO_MAJORITY` even though its EVM receipt was successful, and the contract
   ledger remains `EMITTED_UNCONFIRMED`. This does not establish safe recovery
