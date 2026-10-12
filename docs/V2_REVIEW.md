@@ -4,7 +4,7 @@ Review date: 2026-10-12. Branch: `v2-final-funded`. Starting ref: `467314a4575f8
 
 ## Reviewer conclusion
 
-The funded V2 implementation is locally complete and ready for a controlled StudioNet release. Exactly one active Intelligent Contract, `contracts/ReceiptV2.py`, owns adjudication, accounting and the native GEN withdrawal dispatch. Final deployment and live economic evidence are pending explicit approval for signer, transaction scope and maximum test expenditure.
+The funded V2 implementation is deployed and live-validated. Exactly one active Intelligent Contract, `contracts/ReceiptV2.py`, owns adjudication, accounting and the native GEN withdrawal dispatch. The finalized address, source parity and lifecycle evidence are recorded in `docs/V2_LIVE_RELEASE_EVIDENCE.md`.
 
 The prior fail-closed deployment is historical candidate evidence only and is not the final funded address.
 
@@ -55,14 +55,14 @@ Trust boundaries are: injected EIP-1193 wallet, GenLayer finality, validator non
 | Frontend typecheck/Vitest/build | PASS: typecheck, 14 tests, production build | Wallet/UI/configuration implementation compiles | Wallet signing or live chain state. |
 | Reconciliation fixtures | PASS: 5 | Read-only evidence classification remains idempotent | A live transfer. |
 | Dependency audit | PASS: root and frontend report 0 vulnerabilities | Current package audit | Future dependency updates. |
-| [GitHub Actions 38212445633](https://github.com/ometere123/receipt-/actions/runs/38212445633) | PASS on `5ec0ebe` | Exact-commit contract, frontend, browser and GenVM Direct Mode gates | StudioNet deployment or GEN lifecycle. |
-| Final StudioNet deployment | PENDING approval | — | No final address is claimed. |
-| Live positive/neutral/negative lifecycle | PENDING deployment | — | Must not be represented as pass. |
+| GitHub Actions | PASS on the final release commit; see the release evidence document for the exact run | Exact-commit contract, frontend, browser and GenVM Direct Mode gates | StudioNet deployment or GEN lifecycle. |
+| Final StudioNet deployment | PASS: `0xc0C20aDd6E691a6695B4B93F0A044739A91cbC5F` | Finalized funded single-IC deployment and exact source parity | External transfer guarantees beyond the observed child receipt. |
+| Live positive/neutral/negative lifecycle | PASS: cases 3, 4 and 5 | Real sponsor/challenger writes, independent adjudication, withdrawal and conservation | Recovery of an unrelated failed historical child. |
 
 ## Required live release evidence
 
-After approval, capture the finalized deployment, source parity and zero genesis treasury; then run sponsor funding, challenger commit/reveal, a positive adjudication, recipient withdrawal and independent external child receipt inspection. Also capture `NOT_ESTABLISHED`, malformed/unavailable neutral, malicious leader, duplicate/unauthorized, timeout/recovery and wrong-wallet/network evidence. Record transaction hashes, method names, expected/observed results, and any failed external child without retrying.
+The finalized deployment, exact source parity, sponsor funding, challenger commit/reveal, positive adjudication, recipient withdrawal, external child receipt, `NOT_ESTABLISHED`, digest-mismatch neutral, duplicate and unauthorized evidence are recorded in `docs/V2_LIVE_RELEASE_EVIDENCE.md`. Local Direct Mode covers malicious leader, timeout/recovery and wrong-wallet/network behavior. The two earlier live attempts that remained neutral are retained as historical evidence; neither was retried.
 
 ## Vercel policy
 
-The Vercel project is `delealufejoel-4184s-projects/receipt` with root directory `frontend`. The final env must point to the approved funded V2 address and set `NEXT_PUBLIC_FUNDING_ENABLED=true`; historical V1 variables remain read-only. Production promotion is a post-live-validation step, not a substitute for it. No private key, CLI wallet secret or Vercel token belongs in the repository or a public variable.
+The Vercel project is `delealufejoel-4184s-projects/receipt` with root directory `frontend`. Its Production, Preview and Development envs point to the funded V2 address and set `NEXT_PUBLIC_FUNDING_ENABLED=true`; historical V1 variables remain read-only. No private key, CLI wallet secret or Vercel token belongs in the repository or a public variable.

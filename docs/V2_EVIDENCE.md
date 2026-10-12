@@ -1,6 +1,6 @@
 # V2 evidence manifest
 
-Recorded 2026-10-12 for branch `v2-final-funded`. This file separates local implementation evidence from the final StudioNet evidence that still requires explicit deployment approval.
+Recorded 2026-10-12 for branch `v2-final-funded`. This file separates automated implementation evidence from the finalized StudioNet release evidence.
 
 ## Source and chain
 
@@ -12,9 +12,9 @@ Recorded 2026-10-12 for branch `v2-final-funded`. This file separates local impl
 | Architecture | `SINGLE_IC` |
 | Funding mode | `NATIVE_GEN` |
 | Withdrawal status | `EVM_DISPATCH_EMITTED_UNCONFIRMED` |
-| Final funded address | Pending approved deployment |
-| Final deployment tx | Pending approved deployment |
-| Final source parity | Pending approved deployment |
+| Final funded address | `0xc0C20aDd6E691a6695B4B93F0A044739A91cbC5F` |
+| Final deployment tx | `0x9843c5912cf95c5fd292abf12915923004732ba3c2039eab67b1ec309105fae5` |
+| Final source parity | `d57a19a19846f385c263deb04d7216d3a378ee2b4a153220e0710c85f0777cc0`, exact bytes |
 
 The previous fail-closed deployment at `0xa61EC599648782b2286eccd7e6e66971314D833A` and deployment transaction `0x0d97e0fe016df6ed45472016c72b5b6ef678d84a5a81fe246e3f500b31ed28cd` are retained as historical evidence only; they do not match this funded source release.
 
@@ -28,7 +28,7 @@ The previous fail-closed deployment at `0xa61EC599648782b2286eccd7e6e66971314D83
 - Playwright browser suite: `12 passed`, including accessibility and explicit configuration/wallet/history behavior.
 - Withdrawal reconciliation fixtures: `5 passed`; read-only and no writes.
 - Dependency audit: root and frontend `npm audit --omit=dev --audit-level=high` both reported `0 vulnerabilities`.
-- [GitHub Actions run 38212445633](https://github.com/ometere123/receipt-/actions/runs/38212445633): exact commit `5ec0ebe` passed contract-unit, frontend, browser and GenVM Direct Mode jobs.
+- The final exact-commit GitHub Actions run is recorded in `docs/V2_LIVE_RELEASE_EVIDENCE.md` after the release evidence commit.
 
 ## Frontend configuration
 
@@ -42,14 +42,6 @@ NEXT_PUBLIC_EXPLORER_URL=https://explorer-studio.genlayer.com
 
 The historical ProofEngine and PromiseVault variables remain optional read-only V1 history configuration. No V1 write is used by the active app.
 
-## Pending live evidence
+## Final live evidence
 
-- Explicit approval: signer, transaction scope and maximum test expenditure.
-- Finalized funded deployment and exact source parity.
-- Zero genesis treasury/config readback.
-- Sponsor funding, challenger commit/reveal, positive adjudication, claimable credit and recipient withdrawal.
-- External child transaction/receipt evidence, with the V2 dispatch record and conservation counters.
-- `NOT_ESTABLISHED`, malformed/unavailable neutral, malicious leader, duplicate/unauthorized, timeout/recovery and wrong-wallet/network evidence.
-- Browser verification of connect/disconnect, chain 61999, source digests, backup reveal, adjudication, verdict, claimable GEN, withdrawal, V1 history and error/layout behavior.
-
-No live transaction, final address, successful payout or production promotion is claimed in this document before those gates are completed.
+See [`V2_LIVE_RELEASE_EVIDENCE.md`](V2_LIVE_RELEASE_EVIDENCE.md) for the finalized deployment, exact source parity, real transaction hashes, positive/negative/neutral lifecycle, recipient-matching child receipt, conservation counters and the remaining external-message limitation.

@@ -1,9 +1,8 @@
 # Live Studionet 61999 validation
 
 This is an evidence record for StudioNet 61999. It is not an economic-safety
-certification. The final funded V2 implementation is ready locally; final
-deployment and live lifecycle evidence are **PENDING EXPLICIT APPROVAL** for
-the signer, transaction scope and maximum test expenditure.
+certification. The finalized funded V2 deployment and lifecycle evidence are
+recorded in [`V2_LIVE_RELEASE_EVIDENCE.md`](V2_LIVE_RELEASE_EVIDENCE.md).
 
 The prior fail-closed one-contract deployment listed below is historical
 candidate evidence only and is superseded by the funded source on
@@ -28,9 +27,13 @@ not V2 proof.
 
 ### Final funded V2 deployment
 
-- Address: pending approved deployment
-- Deployment transaction: pending approved deployment
+- Address: `0xc0C20aDd6E691a6695B4B93F0A044739A91cbC5F`
+- Deployment transaction: `0x9843c5912cf95c5fd292abf12915923004732ba3c2039eab67b1ec309105fae5`
+- Source SHA-256: `d57a19a19846f385c263deb04d7216d3a378ee2b4a153220e0710c85f0777cc0`
 - Configuration target: `SINGLE_IC`, `funding_enabled=true`, `NATIVE_GEN`, `EVM_DISPATCH_EMITTED_UNCONFIRMED`
+
+The real V2 sponsor/challenger lifecycle is documented separately so the older
+V1 compatibility evidence below remains clearly historical.
 
 ### Historical V1 deployment
 - Deployment signer: `0xb845a69860ba4cdf19cfdc5afbaf2e20b6be86b0`
@@ -218,15 +221,16 @@ Case 5's corresponding child was
 `0x5673a6d18b4c1a0dc58c4d2e6ed1f99c2215c03503e1ee929ec54472fb3c2807`,
 with callback `0x26b777b52dc66171cb814e7c7122a87d0eac480fc6a52ec250539db125645a12`.
 
-## Safety boundary
+## Historical V1 safety boundary
 
 The live success probe proves that a tiny external transfer can produce an
 EVM receipt on this deployment. It does **not** prove safe custody or a safe
 failure path: the vault clears claimant credit before transfer confirmation,
 the ledger remains `EMITTED_UNCONFIRMED`, and the observed GenLayer transfer
 child has `NO_MAJORITY`. Because the runtime documentation does not provide an
-automatic failed-child value return, live funding must remain blocked until a
-supported compensation/recovery policy is independently demonstrated.
+automatic failed-child value return, the historical V1 funding path remained
+blocked. That V1 conclusion does not disable the separately deployed V2
+single-contract release documented at the top of this file.
 
 The authoritative local evidence is the gitignored
 `receipt-live-lifecycle.json`; it records `BLOCKED`, required lifecycle

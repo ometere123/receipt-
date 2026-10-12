@@ -6,7 +6,7 @@ RECEIPT! is a source-grounded documentation-claim registry for GenLayer Studione
 
 The final funded implementation is on branch `v2-final-funded`. `ReceiptV2.py` is the only active Intelligent Contract: native GEN enters through payable `create_case`/`commit_attempt`, adjudication remains atomic, and recipient-only `withdraw()` emits the established EVM transfer request while recording `EMITTED_UNCONFIRMED`.
 
-The final StudioNet deployment and live economic lifecycle are pending explicit approval for the deployment signer, transaction scope, and maximum test expenditure. The previous fail-closed deployment is not evidence for this funded source and must not be used as the final address.
+The final funded deployment is `0xc0C20aDd6E691a6695B4B93F0A044739A91cbC5F`, deployed by `0x0d5540e0aD4B92Aa0ad4e5F1b8cD645ee1E363E7` in transaction `0x9843c5912cf95c5fd292abf12915923004732ba3c2039eab67b1ec309105fae5`. It finalized successfully on StudioNet 61999, and the deployed `contracts/ReceiptV2.py` bytes match SHA-256 `d57a19a19846f385c263deb04d7216d3a378ee2b4a153220e0710c85f0777cc0`. The previous fail-closed deployment is historical evidence only.
 
 The V1 `ProofEngine.py` and `PromiseVault.py` sources and their historical deployment evidence remain in the repository for read-only audit/history. V1 balances are not migrated into V2, and `main` is not changed by this branch.
 
@@ -105,8 +105,9 @@ The authoritative reviewer material is in:
 - [`docs/V2_PAYOUT_PATTERNS.md`](docs/V2_PAYOUT_PATTERNS.md) — source-backed protocol boundary research.
 - [`docs/V2_REVIEW.md`](docs/V2_REVIEW.md) — threat model, method/state references, audit matrix and evidence ledger.
 - [`docs/V2_EVIDENCE.md`](docs/V2_EVIDENCE.md) — deployed address, source hash, preview and automated evidence snapshot.
+- [`docs/V2_LIVE_RELEASE_EVIDENCE.md`](docs/V2_LIVE_RELEASE_EVIDENCE.md) — finalized deployment, real sponsor/challenger lifecycle, withdrawal child receipt and limitations.
 - [`docs/PROTOCOL.md`](docs/PROTOCOL.md) and [`docs/LIVE_VALIDATION.md`](docs/LIVE_VALIDATION.md) — V1 historical protocol/evidence, not V2 certification.
 
-No live 5/5/5/5 score, production cutover or successful V2 payout is claimed until the approved final deployment and lifecycle evidence exist. A source digest proves exact bytes, not authorship, deployment authenticity or whole-system behavior.
+The live release evidence records a successful V2 payout observation, while documenting the remaining external-transfer limitation. A source digest proves exact bytes, not authorship, deployment authenticity or whole-system behavior.
 
 MIT licensed. See [`LICENSE`](LICENSE).
