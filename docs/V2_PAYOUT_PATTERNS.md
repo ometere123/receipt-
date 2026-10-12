@@ -1,0 +1,58 @@
+# RECEIPT! V2: payout patterns audited from existing single-IC projects
+
+**Reviewed 2026-10-12. Research only, not payment certification.** No GEN moved. The historical V1 deployment and credits are unchanged. V2 funding/withdrawals remain disabled.
+
+## Source-grounded findings
+
+### VeilPact (ometere123/veilpact, `contracts/VeilPact.py`)
+
+- `fund_pact` (around line 421) is `@gl.public.write.payable`; the payer must match the stored pact participant and exactly fund the expected amount.
+- `_set_claimables_from_bps` (around line 352) calculates payer and payee claims deterministically, with the full escrow conserved by giving the payee the remainder after flooring the payer share.
+- `claim_payer_refund` and `claim_payee_payment` (around lines 1018 and 1039) are pull payments. They check recipient identity, claimable >0, settlement applied, and a one-time claimed flag; then `_pay` uses `@gl.evm.contract_interface` `emit_transfer(value=...)`.
+- **Failure distinction:** each method sets the claimed flag and stores final state *before* the external `emit_transfer` is conclusively verified. The public smoke test (`scripts/smoke-test.mjs`, around lines 285-304) confirms a finalized parent and `payeeClaimed=true` but does not reconcile the external child via `eth_getTransactionReceipt` with a recipient-specific successful payment.
+- Therefore it demonstrates *normal pull claim construction* but **does not supply evidence-safe failed/ambiguous child compensation**.
+
+### ShipBond (ometere123/shipbond, `contracts/ShipBondProtocol.py`)
+
+- `settle` (around lines 318-375) freezes outcome, clears bond/reward accounting and sends one or two EOA transfers using `_Recipient(...).emit_transfer(value=...)`.
+- This is a direct-push approach, **less recoverable than a separate entitlement and pull**: the settlement already becomes terminal before external child receipts are tracked.
+- Deterministic splitting, role gates and the concept of a single settlement authority are useful; early terminalization is *not* a safe fix.
+
+### RECEIPT! V1 (this repo, `contracts/PromiseVault.py`)
+
+- `withdraw` (around lines 385-409) zeroes credited wei and reduces outstanding liabilities, then emits an external GEN transfer.
+- Historical live evidence includes `NO_MAJORITY` on the GenLayer child and an independently verified successful EVM receipt for that same payout. Neither status alone is enough to infer the other.
+- `tools/reconcile-withdrawal.mjs` gathers and classifies evidence **read-only**; no on-chain retry, recredit or receipt-authorized resolution exists.
+
+## Confirmed protocol boundary
+
+GenLayer official documentation:
+- https://docs.genlayer.com/developers/intelligent-contracts/features/value-transfers
+- https://docs.genlayer.com/developers/intelligent-contracts/features/messages
+
+EOA payments are external finalized messages through the ghost/EVM layer. Internal value messages explicitly have no automatic failed-child value refund guarantee. The published EOA-send example establishes *supported syntax*, not a user-entitlement-preserving reconciliation protocol. A successful parent receipt is not proof of external payment.
+
+## Good patterns to port
+
+1. Single intelligent contract for **frozen evidence, commit/reveal, semantic adjudication, verdicts, credits, expiry, recovery**, eliminating callback and two-contract race conditions.
+2. Separate `claimable` accounting from adjudication. Do not call outgoing payment while validators are still deciding. Freeze a unique claim ID, exact EOA, wei amount and immutable entitlement references.
+3. Role-constrained pulls; never pay arbitrary caller-supplied destinations, never allow second settlement or duplicate dispatch of the same claim.
+4. CONSERVATIVE terminal-state language: `CLAIMABLE` → `DISPATCHED_UNCONFIRMED` → externally `RECEIPT_VERIFIED`, `FAILED` or `AMBIGUOUS`. Only assert the latter classifications when independently evidenced.
+5. Browser must check FINALIZED **and** successful GenVM execution for the parent, then separately check the external EVM child/receipt; retain all hashes and affected entitlement IDs.
+6. Test failed external execution, child absent, inconsistent GEN/EVM status, successful EVM transfer with NO_MAJORITY, wrong recipient, wrong amount, duplicated observation, and delayed/ambiguous status.
+
+## Essential unsolved problem
+
+A receipt observer in an off-chain client does not authorize an on-chain monetary state transition. A second `retry` write can pay twice after ambiguous earlier success; a `recredit` write can also double-pay, and doing neither can strand an entitlement. Timeouts and balance deltas alone are not cryptographic proof of an individual recipient payment.
+
+Do NOT claim that VeilPact/ShipBond resolve this risk. Do NOT enable V2 funding or withdrawal based only on normal-path success. If strict no-second-contract architecture is retained, either independently establish a *supported, verifiable on-chain external-payment outcome channel* on Studionet 61999 or candidly ship a non-custodial documentation-verdict protocol without automated custody payouts. If an EVM payment rail or receiver contract becomes necessary, that must be explicitly reviewed as a second on-chain component rather than concealed inside the "one contract" claim.
+
+## Release criteria
+
+- CI, exact 61999 CLI/GenVM lint, adversarial Direct Mode, current source hash and deployment parity.
+- On-chain legitimate case create/fund/commit/reveal/assess; sponsor forfeiture and refund; missed reveal; timeout/recovery; fresh wallet/device restore.
+- Explorers and EVM receipts for both success and forced failure/ambiguity, plus idempotent recovery from a genuinely failed payment *without* a duplicate possible payment.
+- V2 frontend addresses and build source fixed; historical V1 claims/credits always remain accessible, never silently assumed transferred.
+- No production release or GEN transactions without explicit human authorization.
+
+The V2 prototype in this branch intentionally cannot open funded cases and cannot withdraw, and thus does not yet satisfy the final marketplace feature set.
