@@ -65,7 +65,6 @@ export async function write(
   await assertNetwork(p);
   if (!isAddress(sender)) throw new Error('Connect a valid wallet first.');
   const client = createClient({ chain: studionet, account: sender as `0x${string}`, provider: p });
-  await client.connect('studionet');
   await assertNetwork(p);
   const call = { address, functionName: method, args: args as [], value };
   onStatus?.('Awaiting wallet signature…');
