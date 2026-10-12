@@ -8,9 +8,15 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { chainPreflight, hashes } from './preflight.mjs';
 
-const cli = resolve(process.platform === 'win32'
-  ? 'node_modules/.bin/genlayer.cmd'
-  : 'node_modules/.bin/genlayer');
+// On Windows invoke the pinned CLI's JS entry with the current Node process;
+// spawning the npm-generated .cmd shim through a shell is not reliable in a
+// non-interactive agent process.
+const cli = process.platform === 'win32'
+  ? process.execPath
+  : resolve('node_modules/.bin/genlayer');
+const cliEntry = process.platform === 'win32'
+  ? resolve('node_modules/genlayer/dist/index.js')
+  : '';
 const journal = 'receipt-v2-deployment.state.json';
 const contractPath = 'contracts/ReceiptV2.py';
 let signerName = '';
@@ -21,9 +27,12 @@ const save = state => writeFileSync(journal, JSON.stringify(state, null, 2) + '\
 
 function run(args) {
   console.log(`\n> genlayer ${args.join(' ')}`);
-  const result = spawnSync(cli, args, {
+  const invocation = cliEntry ? [cliEntry, ...args] : args;
+  const result = spawnSync(cli, invocation, {
     encoding: 'utf8', timeout: 480000, env: process.env,
-    shell: process.platform === 'win32',
+    // The explicit .cmd path is executable through Node on Windows. Using a
+    // shell here can leave the CLI waiting on inherited stdin in automation.
+    shell: false,
   });
   const output = safe(`${result.stdout || ''}\n${result.stderr || ''}`);
   console.log(output.slice(0, 12000));
