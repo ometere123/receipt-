@@ -1,12 +1,12 @@
 # V2 evidence manifest
 
-Recorded 2026-10-12 from branch `v2-single-contract-safety`.
+Recorded 2026-10-12 from the tested code snapshot `38724ba3717aa0bf93c483381d399b459fc4a626`; the later branch commits are documentation-only follow-ups.
 
 ## Source and chain
 
 | Field | Verified value |
 | --- | --- |
-| Branch head | `38724ba3717aa0bf93c483381d399b459fc4a626` |
+| Tested/deployed code snapshot | `38724ba3717aa0bf93c483381d399b459fc4a626` |
 | Network | GenLayer StudioNet, chain `61999` |
 | RPC | `https://studio.genlayer.com/api` |
 | Active contract | `0x8A157929e1FcC0e22278De16f88EfaBC501Ac71d` |
