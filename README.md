@@ -6,7 +6,7 @@ The product has a custom, responsive **detective-club UI** with a case board, cl
 
 ## Status and verification boundaries
 
-The current source includes 81 deterministic contract tests, 15 exact-stack GenVM Direct Mode tests, full GenVM lint plus semantic validation for both contracts under the pinned `GENVM_VERSION=v0.3.0-rc7`, 14 frontend unit tests, 11 production-browser tests, a clean production dependency audit, and a successful production build. A real Studionet deployment, exact source parity, finalized two-wallet lifecycle, and one independently observed EVM payout receipt are recorded in [`docs/LIVE_VALIDATION.md`](docs/LIVE_VALIDATION.md). **Live funding remains BLOCKED** because the external-transfer failure/recovery path is not proven; the UI and replacement contract now enforce a funding-off default for both bounties and challenger bonds, but this is not an economic-safety certification.
+The current source includes 82 deterministic contract tests, 15 exact-stack GenVM Direct Mode tests, full GenVM lint plus semantic validation for both contracts under the pinned `GENVM_VERSION=v0.3.0-rc7`, 14 frontend unit tests, 11 production-browser tests, 5 read-only payout-reconciliation fixture tests, a clean production dependency audit, and a successful production build. A real Studionet deployment, exact source parity, finalized two-wallet lifecycle, and one independently observed EVM payout receipt are recorded in [`docs/LIVE_VALIDATION.md`](docs/LIVE_VALIDATION.md). **Live funding remains BLOCKED** because the external-transfer failure/recovery path is not proven; the UI and replacement contract now enforce a funding-off default for both bounties and challenger bonds, but this is not an economic-safety certification.
 
 ## Architecture
 
@@ -63,6 +63,7 @@ npm run dev
 
 The frontend at `http://localhost:3000` displays a visible **deployment not configured** notice until both deployed addresses are present. This is intentional: it does not substitute fictional data.
 `NEXT_PUBLIC_FUNDING_ENABLED` defaults to `false`; the UI also reads the vault's on-chain `funding_enabled` flag, so both gates must be explicitly true before a new bounty or challenger bond can be submitted. The replacement `PromiseVault` constructor intentionally defaults that flag to false and has no public enable switch. Existing case records, reveal/recovery flows and credits remain readable; the investigator desk shows recent withdrawal dispatch instructions as `EMITTED_UNCONFIRMED`, never as verified receipts.
+The public deployment is explicitly labeled **EXPERIMENTAL / HISTORICAL — NEW FUNDING UNSAFE**. This warning describes the older deployed addresses; frontend gating does not protect that old vault from direct contract calls.
 
 ## 61999 deployment (real transactions)
 
@@ -104,6 +105,7 @@ The app checks both files' bytes and SHA256 before allowing a funded write. The 
 - `cd frontend && npm run typecheck && npm test && npm run lint && npm run build && npm run test:e2e`: frontend.
 - `npm run preflight`: real `eth_chainId` check before deployment.
 - **Live validation:** funded case, challenger bond, reveal, adjudication child, callback, two-wallet negative/inconclusive cases, and an independently observed tiny EVM payout receipt are recorded in [`docs/LIVE_VALIDATION.md`](docs/LIVE_VALIDATION.md). The external-transfer safety gate remains BLOCKED.
+- **Read-only payout reconciliation:** `npm run reconcile:withdrawal` gathers parent/child GenLayer records, EVM transaction/receipt observations, dispatch state and claimant credit without writing or retrying. It classifies evidence as `RECEIPT_VERIFIED`, `FAILED_UNRECOVERED`, `AMBIGUOUS`, or `AWAITING_EVIDENCE`; classifications never update contract storage.
 
 ## Repository contents
 

@@ -78,6 +78,14 @@ those records as paid receipts. The UI can only direct the user to verify the
 separate child transfer in the explorer, and it never retries a withdrawal
 blindly.
 
+The repository's `npm run reconcile:withdrawal` utility is a read-only
+operator tool for the same boundary. It collects the parent and exact child
+identifiers, GenLayer status/result, EVM transaction and receipt, recipient,
+amount, available `value_credited`, dispatch record and claimant credit. Its
+off-chain classifications are `RECEIPT_VERIFIED`, `FAILED_UNRECOVERED`,
+`AMBIGUOUS`, and `AWAITING_EVIDENCE`; none is an authenticated PromiseVault
+state and none triggers a retry or recredit.
+
 ## Security invariants
 
 - No unfunded case.

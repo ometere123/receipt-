@@ -240,6 +240,41 @@ def test_replacement_vault_blocks_challenger_bonds_by_default(vault):
     assert vault.attempt_count == 0
 
 
+def test_funding_gate_preserves_balances_counts_and_storage(vault, engine):
+    before = {
+        'config': vault.get_config(),
+        'counts': vault.get_counts(),
+        'treasury': vault.get_treasury_status(),
+        'cases': dict(vault.cases),
+        'attempts': dict(vault.attempts),
+        'credits': dict(vault.credits),
+        'dispatches': dict(vault.dispatches),
+        'outstanding': vault.outstanding,
+        'total_dispatched': vault.total_dispatched,
+    }
+    MSG.value = 10**18
+    with pytest.raises(UserError, match='live funding disabled'):
+        vault.create_case('The fee ceiling', 'demo', 'fees', 'a' * 40,
+                          'docs/fees.md', 'src/fees.py',
+                          'Our protocol never exceeds a 2% distribution fee.',
+                          '0' * 64, '1' * 64, 72)
+    MSG.value = 5 * 10**16
+    with pytest.raises(UserError, match='live funding disabled'):
+        vault.commit_attempt(1, 'a' * 64)
+    after = {
+        'config': vault.get_config(),
+        'counts': vault.get_counts(),
+        'treasury': vault.get_treasury_status(),
+        'cases': dict(vault.cases),
+        'attempts': dict(vault.attempts),
+        'credits': dict(vault.credits),
+        'dispatches': dict(vault.dispatches),
+        'outstanding': vault.outstanding,
+        'total_dispatched': vault.total_dispatched,
+    }
+    assert after == before
+
+
 def test_only_bound_engine_may_activate(vault):
     MSG.sender_address=Address(ATTACKER)
     with pytest.raises(UserError, match='only configured'):

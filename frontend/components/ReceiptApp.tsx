@@ -191,7 +191,7 @@ export default function ReceiptApp() {
       <main className="container main">
         {!hasDeployment() && <div className="notice notice-warn"><CircleAlert size={19}/><span><strong>Deployment not configured.</strong> This is the real application, not a simulated chain. Supply both deployed contract addresses in <code>frontend/.env.local</code> to load and transact with cases.</span></div>}
         {account && !networkReady && <div className="notice notice-warn"><CircleAlert size={19}/><span>Wallet connected to chain {chain ?? 'unknown'}. Writes are blocked until Studionet 61999 is selected.</span><button onClick={switchNetwork} className="btn btn-ink btn-small">Switch network</button></div>}
-        {hasDeployment() && !fundingEnabled && <div className="notice notice-warn"><CircleAlert size={19}/><span><strong>Live funding is paused.</strong> The external GEN transfer failure/recovery path is not proven. Existing finalized credits remain visible, but new bounties and challenger bonds cannot be created safely.</span></div>}
+        {hasDeployment() && !fundingEnabled && <div className="notice notice-warn"><CircleAlert size={19}/><span><strong>EXPERIMENTAL / HISTORICAL — NEW FUNDING UNSAFE.</strong> Live funding is paused because the external GEN transfer failure/recovery path is not proven. Existing finalized credits remain visible, but new bounties and challenger bonds cannot be created safely.</span></div>}
         {error && <div role="alert" className="notice notice-error"><CircleAlert size={18}/><span>{error}</span><button aria-label="Dismiss error" onClick={()=>setError('')}><X size={17}/></button></div>}
         {tab === 'explore' && <>
           <section className="hero">

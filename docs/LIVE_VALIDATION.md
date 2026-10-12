@@ -35,8 +35,9 @@ FINALIZED with successful leader execution. `get_config` reports
 
 After the production deployment containing the funding gate, a headless browser
 read-only check of `https://receipt-five-cyan.vercel.app/` loaded five live
-case cards from the 61999 registry and displayed the `Live funding is paused`
-warning. The first live `OPEN` case was opened successfully; its evidence and
+case cards from the 61999 registry and displayed the
+`EXPERIMENTAL / HISTORICAL — NEW FUNDING UNSAFE` / funding-paused warning. The
+first live `OPEN` case was opened successfully; its evidence and
 case details remained readable, `New challenges are paused` was visible, and
 there were zero `Commit challenge` buttons. No wallet connection and no write
 transaction was attempted. This verifies that the production UI preserves
@@ -58,8 +59,8 @@ tests, including zero WCAG 2A/2AA violations on each primary view. This keeps
 the contrast fixes regression-tested without depending on live chain data.
 
 The current production frontend candidate was deployed from commit
-`7253beaefe8902315a66fc161bab3d7611aa9cd2` as Vercel deployment
-`dpl_61WzUhdu9arJpNwRL9KxdVkaEqob`, aliased to
+`caa141d7d465ca16ec44b9532e37a93100a8bdad` as Vercel deployment
+`dpl_8TLU8GfpaarwFQNjNdQ5Uk3pKmrH`, aliased to
 `https://receipt-five-cyan.vercel.app`. A protected `vercel curl` request to
 `/api/build-info` returned the same commit and deployment ID, chain `61999`,
 PromiseVault `0x6A5366Dcc45E6fb137534BA09f44632593c18880`, and ProofEngine
@@ -70,6 +71,28 @@ The production deployment's error-log query returned no logs. The current
 investigator desk also renders recent withdrawal dispatch instructions as
 `EMITTED_UNCONFIRMED` records, without presenting them as payment receipts or
 retrying them automatically.
+
+## Read-only payout reconciliation
+
+At `2026-10-12T00:00:12.958Z`,
+`npm run reconcile:withdrawal -- --parent
+0xc8ef0315e6edebacbb5cc8a70b68bdb442bd707f8939c050a246ec44771e2f28
+--vault 0x6A5366Dcc45E6fb137534BA09f44632593c18880 --dispatch-id 1` completed
+without a write. It observed the exact child
+`0xa9800dc4ec8ff68f2ad1d9d731438c80c2c8261f1eaf6cbfbe01437eb362f583`, a
+finalized child with `NO_MAJORITY` and `value_credited: true`, an EVM receipt
+with `status: 0x1`, recipient
+`0xB845a69860ba4CDf19CfDC5AfbAF2e20b6bE86b0`, value `1100000000000000`, and
+one recipient-matching log. The vault dispatch remained
+`EMITTED_UNCONFIRMED`; the current claimant credit read was
+`1200000000000000` because it includes other existing entitlements and is not
+attributed to this dispatch.
+
+The utility classified this dispatch as `RECEIPT_VERIFIED` while retaining the
+separate GenLayer `NO_MAJORITY` fact. It performed no retry, recredit or
+settlement write. Fixture tests also cover failed, ambiguous, missing and
+duplicate observations. This is evidence reconciliation only, not a safe
+failure-compensation mechanism.
 
 ## Deployed-source parity
 

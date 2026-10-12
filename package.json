@@ -10,6 +10,8 @@
     "test:contracts": "python -m pytest -q tests/unit",
     "test:direct": "python -m pytest -v tests/direct",
     "source:verify": "node tools/verify-deployed-source.mjs",
+    "reconcile:withdrawal": "node tools/reconcile-withdrawal.mjs",
+    "test:reconciliation": "node --test tools/reconcile-withdrawal.test.mjs",
     "lint:contracts": "node tools/lint-contracts.mjs",
     "typecheck:frontend": "npm --prefix frontend run typecheck",
     "test:frontend": "npm --prefix frontend test",

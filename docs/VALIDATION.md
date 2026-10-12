@@ -14,6 +14,7 @@ This document is a test specification and evidence ledger, **not** an economic-s
 - Fast `genvm-lint lint --json`: both contracts pass all 3 checks.
 - `npm run lint:contracts`: full lint and semantic validation pass for both contracts with `GENVM_VERSION=v0.3.0-rc7`; the output notes that a newer runner exists, but the pinned target is deliberate for the 61999 toolchain.
 - Frontend: typecheck passed, Vitest 14 passed, ESLint passed, `npm audit --omit=dev --audit-level=high` reports 0 high-severity findings, production build passed, and Playwright 11 passed against the built app, including the WCAG 2A/2AA primary-view regression gate. The CSS has existing Autoprefixer flex-start/flex-end compatibility warnings.
+- `npm run test:reconciliation`: 5 deterministic read-only payout-reconciliation fixtures pass, covering a successful receipt with `NO_MAJORITY`, a failed receipt, conflicting evidence, a missing child, and duplicate/idempotent observations. `npm run reconcile:withdrawal` performs the same collection against the pinned Studionet RPC without writes, retries or recredits.
 - A real Studionet 61999 deployment, exact source parity for the older
   `de3cd57...` candidate, finalized child messages, two-wallet adjudication,
   and one independently observed EVM payout receipt are recorded in
@@ -106,3 +107,11 @@ read inside PromiseVault. Test adjudication-vs-recovery interleavings in
 GenVM Direct Mode, plus a 61999 real child lifecycle. Also obtain frontend
 Next build, Vitest, Playwright, real network browser session and source-byte
 parity. **Unit mocks and syntax-only parsing cannot substitute for them.**
+
+The read-only reconciliation tool is intentionally separate from settlement:
+it records parent/child GenLayer state, EVM transaction/receipt evidence,
+`value_credited`, `get_dispatch()` and claimant credit, then emits an
+off-chain classification. It never writes `PAID`, retries a child or restores
+credit. The historical deployment's observed payout is therefore reported as
+both `RECEIPT_VERIFIED` by independent receipt evidence and a GenLayer child
+`NO_MAJORITY`, not silently normalized into one consensus result.
