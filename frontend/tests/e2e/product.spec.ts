@@ -9,11 +9,11 @@ test('product renders without fictional on-chain cases', async ({page}) => {
 
 test('deployment state is explicit and never fictional', async ({page}) => {
   await page.goto('/');
-  const configured = page.getByText(/V2 funding is unavailable/i);
+  const configured = page.getByText(/V2 configuration is unavailable|V2 funding is disabled/i);
   const unconfigured = page.getByText(/V2 deployment not configured/i);
   if (await configured.count()) {
     await expect(configured).toBeVisible();
-    await expect(page.getByText(/frontend configuration does not currently agree/i)).toBeVisible();
+    await expect(page.getByText(/funding status is unknown|frontend funding gate does not allow/i)).toBeVisible();
   } else {
     await expect(unconfigured).toBeVisible();
     await expect(page.getByText(/not a simulated chain/i)).toBeVisible();
@@ -26,7 +26,7 @@ test('funding configuration keeps value-bearing writes explicit without hiding t
   await page.locator('.desktop-nav').getByRole('button',{name:'Review configuration'}).click();
   await expect(page.getByText(/What promise are we testing/i)).toBeVisible();
   await expect(page.getByText(/Bounty in GEN/i)).toBeVisible();
-  await expect(page.getByText(/Funding is not enabled in this frontend/i)).toBeVisible();
+  await expect(page.getByText(/Funding is disabled\.|Live RPC unavailable\./i)).toBeVisible();
   await expect(page.getByRole('button',{name:'Fund & publish'})).toHaveCount(0);
   await page.getByRole('button',{name:'Receipt home'}).click();
   await expect(page.getByText(/Read the configured deployment state/i)).toBeVisible();

@@ -66,4 +66,17 @@ describe('injected write path', () => {
     expect(methods.some((method) => /snap/i.test(method))).toBe(false);
     expect(requests.at(-1)?.method).toBe('eth_sendTransaction');
   });
+
+  it('blocks writes when the injected wallet is on the wrong network', async () => {
+    const provider: InjectedProvider = {
+      request: vi.fn(async ({ method }) => {
+        if (method === 'eth_chainId') return '0x1';
+        throw new Error(`Unexpected provider RPC: ${method}`);
+      }),
+    };
+    const { assertNetwork } = await import('./chain');
+
+    await expect(assertNetwork(provider)).rejects.toThrow('Wrong network (0x1). Switch your wallet to Studionet (61999).');
+    expect(provider.request).toHaveBeenCalledWith({ method: 'eth_chainId' });
+  });
 });

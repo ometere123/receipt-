@@ -4,6 +4,22 @@ import { studionet } from 'genlayer-js/chains';
 import { TransactionHashVariant, TransactionStatus } from 'genlayer-js/types';
 import { CHAIN_ID, HISTORICAL_VAULT, RECEIPT_V2, isAddress, hasDeployment, hasHistoricalDeployment, type ReceiptCase, type ReceiptAttempt } from './domain';
 
+export const GENLAYER_RPC_ENDPOINT = '/api/genlayer-rpc';
+
+function studionetWithRpcEndpoint() {
+  return {
+    ...studionet,
+    rpcUrls: {
+      ...studionet.rpcUrls,
+      default: { ...studionet.rpcUrls.default, http: [GENLAYER_RPC_ENDPOINT] },
+    },
+  };
+}
+
+function createGenlayerClient(config: { account?: `0x${string}`; provider?: InjectedProvider } = {}) {
+  return createClient({ ...config, chain: studionetWithRpcEndpoint(), endpoint: GENLAYER_RPC_ENDPOINT });
+}
+
 export interface InjectedProvider {
   request(args: { method: string; params?: unknown[] | object }): Promise<unknown>;
   on?(event: string, cb: (...args: unknown[]) => void): void;
@@ -13,7 +29,7 @@ export interface TreasuryStatus { accepted_wei: string; credited_wei: string; ou
 export interface DispatchRecord { id: number; recipient: string; amount_wei: string; status: string; created_at: number; }
 declare global { interface Window { ethereum?: InjectedProvider } }
 export function injected(): InjectedProvider | null { return typeof window === 'undefined' ? null : window.ethereum || null; }
-export const publicClient = createClient({ chain: studionet });
+export const publicClient = createGenlayerClient();
 export function assertDeployed() { if (!hasDeployment()) throw new Error('V2 deployment address is not configured. Set NEXT_PUBLIC_RECEIPT_V2_ADDRESS.'); }
 export async function read(method: string, args: unknown[] = [], address: `0x${string}` = RECEIPT_V2) {
   assertDeployed();
@@ -64,7 +80,7 @@ export async function write(
   const p = injected(); if (!p) throw new Error('Injected wallet unavailable.');
   await assertNetwork(p);
   if (!isAddress(sender)) throw new Error('Connect a valid wallet first.');
-  const client = createClient({ chain: studionet, account: sender as `0x${string}`, provider: p });
+  const client = createGenlayerClient({ account: sender as `0x${string}`, provider: p });
   await assertNetwork(p);
   const call = { address, functionName: method, args: args as [], value };
   onStatus?.('Awaiting wallet signature…');
