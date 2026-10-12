@@ -112,6 +112,7 @@ def load(name):
     return mod
 VAULTMOD=load('PromiseVault')
 ENGINEMOD=load('ProofEngine')
+V2MOD=load('ReceiptV2')
 
 if _real_genlayer is not None:
     sys.modules['genlayer'] = _real_genlayer
@@ -134,6 +135,7 @@ def reset(monkeypatch):
     EMISSIONS.clear();TRANSFERS.clear();VIEWS.clear();NETWORK.clear()
     GL.nondet.response={'verdict':'CONTRADICTED','scope_ok':True,'proof_complete':True,'contradiction':True,'reason':'The effective fee path contradicts the promised limit.'}
     monkeypatch.setattr(VAULTMOD,'_now',lambda:100000)
+    monkeypatch.setattr(V2MOD,'_now',lambda:100000)
     yield
 
 @pytest.fixture
