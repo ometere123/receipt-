@@ -68,4 +68,4 @@ The manifest is ignored by Git and must be attached as review evidence rather th
 
 ## Vercel cutover policy
 
-The Vercel project `receipt` has root directory `frontend`. Preview and Development use the finalized parity-verified V2 address; Production retains the V1 historical deployment until V2 satisfies the release gates. The latest verified V2 preview is `receipt-nn1iyllsw-delealufejoel-4184s-projects.vercel.app` from commit `4961a9e`. `NEXT_PUBLIC_FUNDING_ENABLED` remains `false` in every environment. No private key, CLI wallet secret or Vercel token belongs in the repository or a public variable.
+The Vercel project `receipt` has root directory `frontend`. Preview and Development use the finalized parity-verified V2 address; Production retains the V1 historical deployment until V2 satisfies the release gates. The latest verified V2 preview is `receipt-9mlooobkj-delealufejoel-4184s-projects.vercel.app` from commit `c7efd9e`. `NEXT_PUBLIC_FUNDING_ENABLED` remains `false` in every environment. No private key, CLI wallet secret or Vercel token belongs in the repository or a public variable.
