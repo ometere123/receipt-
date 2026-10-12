@@ -1,12 +1,13 @@
 # V2 evidence manifest
 
-Recorded 2026-10-12 from the tested and deployed code snapshot `7e9942fd182a57c152ed517dbb305f8703cc395e`.
+Recorded 2026-10-12 from repository evidence commit `4961a9e1319354020d48555eb72d31aa7e6b14fb`; the deployed ReceiptV2 source remains the exact contract snapshot `7e9942fd182a57c152ed517dbb305f8703cc395e`.
 
 ## Source and chain
 
 | Field | Verified value |
 | --- | --- |
-| Tested/deployed code snapshot | `7e9942fd182a57c152ed517dbb305f8703cc395e` |
+| Active contract source snapshot | `7e9942fd182a57c152ed517dbb305f8703cc395e` |
+| Repository evidence commit | `4961a9e1319354020d48555eb72d31aa7e6b14fb` |
 | Network | GenLayer StudioNet, chain `61999` |
 | RPC | `https://studio.genlayer.com/api` |
 | Active contract | `0xa61EC599648782b2286eccd7e6e66971314D833A` |
@@ -22,9 +23,9 @@ Recorded 2026-10-12 from the tested and deployed code snapshot `7e9942fd182a57c1
 | --- | --- |
 | Vercel project | `delealufejoel-4184s-projects/receipt` |
 | Root directory | `frontend` |
-| Preview | https://receipt-enksmvmva-delealufejoel-4184s-projects.vercel.app |
-| Preview deployment | `dpl_3jXLPJZrmMRFQLgQxJAJsmt1E9H8` |
-| Preview source commit | `7e9942fd182a57c152ed517dbb305f8703cc395e` |
+| Preview | https://receipt-nn1iyllsw-delealufejoel-4184s-projects.vercel.app |
+| Preview deployment | `dpl_2vH6kkuL24rhHkGnPtQYTGEs1RHU` |
+| Preview source commit | `4961a9e1319354020d48555eb72d31aa7e6b14fb` |
 | Preview smoke | Protected deployment verified with `vercel curl`: `/api/build-info` reports V2 + historical addresses; HTML shows V2 safety gate and V1 history tab |
 | Production alias | Unchanged; no V2 production env or promotion performed |
 
@@ -36,7 +37,7 @@ Recorded 2026-10-12 from the tested and deployed code snapshot `7e9942fd182a57c1
 - ReceiptV2 linter and semantic validation: `3 checks passed`.
 - RPC preflight: exact 61999 passed.
 - Frontend Vitest: `14 passed`.
-- [GitHub Actions run 38193256878](https://github.com/ometere123/receipt-/actions/runs/38193256878): frontend, contract-unit, browser and genvm-direct jobs all succeeded.
+- [GitHub Actions run 38194079546](https://github.com/ometere123/receipt-/actions/runs/38194079546): frontend, contract-unit, browser and genvm-direct jobs all succeeded.
 - Frontend typecheck, ESLint and production build: passed.
 - Playwright: `12 passed` with the real V2 local env after a fresh build.
 - V2 reconciliation: `DISABLED_NO_DISPATCH`, read-only, no writes.

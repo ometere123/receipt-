@@ -56,26 +56,23 @@ node --check tools/deploy-studionet.mjs
 3. Run GenLayer Test Direct Mode with wallet/source fetch and malicious leader tests; verify the SDK pinned in each contract matches the target GenVM runtime. Do not present pytest's local API mock as equivalent to Direct Mode.
 4. Run frontend `npm run typecheck`, `npm test`, `npm run lint`, `npm run build` after installing dependencies.
 5. Run Studionet RPC and account preflight; verify chain 61999, exact CLI 0.39.1, compatible GenVM and wallet.
-6. Deploy both contracts from immutable source with CLI, wait for FINALIZED **and** successful GenVM execution, bind engine once, re-read binding and on-chain code; preserve transaction IDs and source digests.
+6. Deploy exactly one active `ReceiptV2` contract from immutable source with the repository-local CLI, wait for FINALIZED **and** successful GenVM execution, re-read configuration and on-chain code, and preserve the deployment transaction and source digest. The V1 `ProofEngine`/`PromiseVault` pair is historical read-only evidence and must not be redeployed or bound as part of V2.
 
 ## Independent 61999 evidence matrix
 
 | Action | Expected verification | Evidence |
 | --- | --- | --- |
-| Deploy ProofEngine | FINALIZED + execution SUCCESS; source/schema match | explorer tx, code and SHA |
-| Deploy PromiseVault | FINALIZED + execution SUCCESS; source/schema match | explorer tx, code and SHA |
-| Bind Engine → Vault | one-time binding, no rebinding | explorer tx, `get_vault` read |
-| Sponsor funds claim | GEN value actually received; immutable fields and hashes match | tx and `get_case` final read |
+| Deploy ReceiptV2 | FINALIZED + execution SUCCESS; one address, schema and source match | [`V2_EVIDENCE.md`](V2_EVIDENCE.md), deployment tx, code and SHA |
+| Read ReceiptV2 configuration | `SINGLE_IC`, chain 61999, funding false, withdrawal fail-closed | finalized read and treasury status |
+| Sponsor funds claim | **BLOCKED by safety gate** until external recovery is proven | contract revert and frontend safety gate |
 | Attacker tries wrong chain | blocked before EIP-1193 write | browser capture |
-| Challenger commits exact bond | wallet-signed value, case marked active after finalization | tx, case/attempt view |
+| Challenger commits exact bond | **BLOCKED by safety gate** until external recovery is proven | contract revert and frontend safety gate |
 | Challenger reveals | commitment verified; correct finalized child assess appears | reveal tx plus child tx |
 | Independent validation | validators actually fetch same digest and substantively evaluate source and claim | traces, malicious leader scenarios |
-| Engine stores verdict | storage record is final; callback emitted on finalization | child tx, `get_verdict` |
-| Vault settles | only authorized callback, no premature payout or double settlement | callback tx, case/credit views |
-| Challenger withdraws GEN | confirmed external payment, not just claimed by UI | payout parent + ghost/EVM transfer evidence |
-| Invalid case | sponsor receives bond; case reopens | separate distinct-wallet tx trail |
-| Inconclusive case | challenger bond refunded; bounty remains reserved | separate trail |
-| Timeout cases | forfeiture, finalized recovery request, engine verdict-vs-recovery arbitration, tombstone, confirmation callback, expired sponsor refund | separate trails |
+| ReceiptV2 stores verdict | normalized result and entitlement update in one contract transaction | `get_verdict`, `get_attempt`, `get_credit` |
+| ReceiptV2 withdrawal | **DISABLED_FAIL_CLOSED**; no external dispatch or state clearing | contract revert and zero dispatch counters |
+| Historical V1 payout | preserved only as read-only evidence; not a V2 safety proof | [`LIVE_VALIDATION.md`](LIVE_VALIDATION.md) |
+| Invalid/inconclusive/timeout cases | local and Direct Mode state-machine coverage; live funding blocked | 104 unit tests, 16 Direct Mode tests |
 | Browser refresh | committed data and pending tx recover; no duplicate write | screen recording + tx IDs |
 | Responsive and a11y | phone, desktop, contrast, keyboard dialog, reduced motion | manual UI checklist |
 

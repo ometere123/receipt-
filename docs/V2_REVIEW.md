@@ -45,11 +45,13 @@ Trust boundaries are: injected wallet, GenLayer finality, validator nondetermini
 
 | Evidence | Result | What it proves | What it does not prove |
 | --- | --- | --- | --- |
-| `python -m pytest -q tests/unit` | PASS: 92 | Deterministic V2 state and adversarial normalization checks | GenVM consensus or live payment. |
+| `python -m pytest -q tests/unit` | PASS: 104 | Deterministic V2 state, targeted verdict mutations and adversarial normalization checks | GenVM consensus or live payment. |
 | `python -m pytest -q tests/direct` | PASS: 16 | Runtime-level deployment/read checks | StudioNet economic lifecycle. |
 | `frontend npm run typecheck/test/lint/build` | PASS after V2 address refactor | Frontend compiles and presents one-contract fail-closed UX | Wallet signing or live chain state. |
-| `npm run preflight` | Requires live RPC | RPC is exactly 61999 | Contract deployment or payout. |
+| Playwright browser suite | PASS: 12 | Safety gate and explicit historical V1 viewer render in a built app | Wallet signing or live chain writes. |
+| `npm run preflight` | PASS against live RPC | RPC is exactly 61999 | Contract deployment or payout. |
 | `npm run source:verify` | PASS: exact bytes at `0xa61EC599...` | Exact deployed source bytes | Economic safety. |
+| GitHub Actions run 38194079546 | PASS: frontend, browser, contract-unit and genvm-direct | Exact pushed commit passed repository gates | Live external payment recovery. |
 | Live payout success/failure/ambiguity | NOT RUN for V2 | — | Must not be represented as pass. |
 
 ## Deployment proof fields
@@ -66,4 +68,4 @@ The manifest is ignored by Git and must be attached as review evidence rather th
 
 ## Vercel cutover policy
 
-The Vercel project `receipt` has root directory `frontend`. Preview and Development now use the finalized parity-verified V2 address; Production retains the V1 historical deployment until V2 satisfies the release gates. `NEXT_PUBLIC_FUNDING_ENABLED` remains `false` in every environment. No private key, CLI wallet secret or Vercel token belongs in the repository or a public variable.
+The Vercel project `receipt` has root directory `frontend`. Preview and Development use the finalized parity-verified V2 address; Production retains the V1 historical deployment until V2 satisfies the release gates. The latest verified V2 preview is `receipt-nn1iyllsw-delealufejoel-4184s-projects.vercel.app` from commit `4961a9e`. `NEXT_PUBLIC_FUNDING_ENABLED` remains `false` in every environment. No private key, CLI wallet secret or Vercel token belongs in the repository or a public variable.

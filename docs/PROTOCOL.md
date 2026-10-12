@@ -1,5 +1,10 @@
 # RECEIPT! protocol specification
 
+This document describes the historical V1 two-contract protocol for audit and
+data compatibility. The active V2 protocol is the single-contract
+`contracts/ReceiptV2.py`; see [`V2_SINGLE_CONTRACT.md`](V2_SINGLE_CONTRACT.md)
+and [`V2_REVIEW.md`](V2_REVIEW.md) for current state and release gates.
+
 ## Domain and claim model
 
 RECEIPT! adjudicates exactly one **literal documentation claim** against one **pinned source file** and one **pinned documentation file**. It does not certify whole repositories, binaries, release artifacts, security posture, or ownership of the GitHub account.

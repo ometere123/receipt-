@@ -1,24 +1,31 @@
 # Live Studionet 61999 validation
 
-This is an evidence record for the current Studionet deployment. It is not an
-economic-safety certification. The external GEN-transfer failure path remains
-unproven, so live funding is explicitly **BLOCKED**.
+This is an evidence record for StudioNet 61999. It is not an economic-safety
+certification. The external GEN-transfer failure path remains unproven, so
+live V2 funding is explicitly **BLOCKED**.
 
-The parity and lifecycle evidence below records the older `de3cd57...`
-candidate. The working-tree replacement contract now adds a default-off
-`funding_enabled` gate and coherent verdict normalization, but no replacement
-contract was deployed because fresh authorization for that irreversible action
-was not provided. The production frontend is separately configured with
-`NEXT_PUBLIC_FUNDING_ENABLED=false` and also reads the on-chain gate. The
-replacement source gates both new bounties and challenger bonds; existing
-reveal, recovery, credit, and withdrawal controls remain available for prior
-entitlements.
+The current active replacement is the one-contract `ReceiptV2` deployment
+listed below. Its source parity and fail-closed configuration are verified, but
+it accepts no new bounty or challenger-bond value and emits no withdrawals.
+The older two-contract lifecycle evidence later in this file is explicitly
+historical V1 evidence; it is retained for audit and data compatibility and is
+not V2 proof.
 
 ## Network and deployment
 
 - RPC: `https://studio.genlayer.com/api`
 - Chain: `61999` (stable Studionet)
 - Repository-local CLI: `genlayer 0.39.1`
+
+### Active V2 deployment
+
+- ReceiptV2: `0xa61EC599648782b2286eccd7e6e66971314D833A`
+  - deploy: `0x0d97e0fe016df6ed45472016c72b5b6ef678d84a5a81fe246e3f500b31ed28cd`
+  - source SHA-256: `507c15b977f660014af663ef8371fa9b873c7f8a3c1f373815c4a356afa46a91`
+  - configuration: `SINGLE_IC`, `funding_enabled=false`, `DISABLED_FAIL_CLOSED`
+- Genesis treasury: accepted/credited/outstanding/dispatch = `0`
+
+### Historical V1 deployment
 - Deployment signer: `0xb845a69860ba4cdf19cfdc5afbaf2e20b6be86b0`
 - ProofEngine: `0xa2E4DaFe86229e6A3d1C92C6dCEb680dd4a55128`
   - deploy: `0x87eb2bd9aa7b9b5a708ea2fce52645630f3db4ad2bcff64eda13e61694b055f0`
@@ -27,11 +34,11 @@ entitlements.
 - Engine binding: `0x7fb150ecf31a9bfc1a668886dd82479aac9325a10f858ad37b672a0460d73bc8`
 - Binding activation child: `0x4291796769d81061ce67e09a1b8476dbb6a10a10295609265b8663ae517c11e1`
 
-The binding parent and activation child were independently observed as
+The historical binding parent and activation child were independently observed as
 FINALIZED with successful leader execution. `get_config` reports
 `engine_ready: true`, and `get_vault` returns the deployed PromiseVault.
 
-## Production frontend read-only check
+## Production frontend read-only check (historical V1)
 
 After the production deployment containing the funding gate, a headless browser
 read-only check of `https://receipt-five-cyan.vercel.app/` loaded five live
@@ -72,7 +79,7 @@ investigator desk also renders recent withdrawal dispatch instructions as
 `EMITTED_UNCONFIRMED` records, without presenting them as payment receipts or
 retrying them automatically.
 
-## Read-only payout reconciliation
+## Read-only payout reconciliation (historical V1)
 
 At `2026-10-12T00:00:12.958Z`,
 `npm run reconcile:withdrawal -- --parent
@@ -94,7 +101,7 @@ settlement write. Fixture tests also cover failed, ambiguous, missing and
 duplicate observations. This is evidence reconciliation only, not a safe
 failure-compensation mechanism.
 
-## Deployed-source parity
+## Deployed-source parity (historical V1)
 
 At commit `de3cd57cf3301b2f8dca0e3cec5f9bb539b1b52c`, `npm run source:verify`
 passed with exact byte equality for both deployed contracts:
@@ -108,7 +115,7 @@ The live claim probe froze repository commit
 `dced4fcaaec60a8c91d3b101671cc2d36e6c0640`. Its documentation digest is
 `36688cb3f41244fc3e39bb4ad7a26e7685b72048d347218667e47ec3cb5e0c30`.
 
-## Two-wallet lifecycle
+## Two-wallet lifecycle (historical V1)
 
 The probe used separate sponsor and challenger accounts:
 
@@ -218,10 +225,10 @@ The authoritative local evidence is the gitignored
 `receipt-live-lifecycle.json`; it records `BLOCKED`, required lifecycle
 success, and the unresolved case 3 rather than hiding either limitation.
 
-The replacement source fixes three source-level hazards and is covered by local
-unit/Direct Mode tests: new bounties and challenger bonds are disabled by
-default, and incoherent
+The deployed replacement source fixes three source-level hazards and is covered
+by local unit/Direct Mode tests: new bounties and challenger bonds are disabled
+by default, and incoherent
 `NOT_ESTABLISHED`/`OUT_OF_SCOPE` flag combinations become neutral
-`INCONCLUSIVE` results so a challenger bond is refunded. Those fixes are not
-live on the older addresses until an authorized replacement deployment is
-performed and source parity is re-established.
+`INCONCLUSIVE` results so a challenger bond is refunded. Those fixes are live
+on the active V2 address listed above; V1 balances and credits were not
+migrated.
