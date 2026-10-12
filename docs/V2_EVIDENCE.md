@@ -35,6 +35,7 @@ Recorded 2026-10-12 from the tested and deployed code snapshot `7e9942fd182a57c1
 - ReceiptV2 linter and semantic validation: `3 checks passed`.
 - RPC preflight: exact 61999 passed.
 - Frontend Vitest: `14 passed`.
+- [GitHub Actions run 38193256878](https://github.com/ometere123/receipt-/actions/runs/38193256878): frontend, contract-unit, browser and genvm-direct jobs all succeeded.
 - Frontend typecheck, ESLint and production build: passed.
 - Playwright: `12 passed` with the real V2 local env after a fresh build.
 - V2 reconciliation: `DISABLED_NO_DISPATCH`, read-only, no writes.
