@@ -2,7 +2,7 @@
 import hashlib
 import json
 import pytest
-from tests.unit.conftest import V2MOD, MSG, NETWORK, SPONSOR, CLAIMANT, VAULT, Address, UserError
+from tests.unit.conftest import V2MOD, MSG, NETWORK, SPONSOR, CLAIMANT, ATTACKER, VAULT, Address, UserError
 
 @pytest.fixture
 def one():
@@ -156,6 +156,148 @@ def test_unknown_consensus_return_fails_closed(one, monkeypatch):
     with pytest.raises(UserError, match='invalid consensus result'):
         one.adjudicate_attempt(1)
     assert json.loads(one.get_attempt(1))['status'] == 'PENDING'
+
+@pytest.mark.parametrize('field,mutated', [
+    ('verdict', 'NOT_ESTABLISHED'),
+    ('scope_ok', False),
+    ('proof_complete', False),
+    ('contradiction', False),
+    ('digest', 'f' * 64),
+])
+def test_each_decision_field_mutation_fails_validator(one, monkeypatch, field, mutated):
+    _prepared(one)
+    def disagree(leader, validator):
+        candidate = leader()
+        altered = dict(candidate)
+        altered[field] = mutated
+        if not validator(V2MOD.gl.vm.Return(altered)):
+            raise UserError(f'validator rejected mutation: {field}')
+        return candidate
+    monkeypatch.setattr(V2MOD.gl.vm, 'run_nondet_unsafe', disagree)
+    MSG.sender_address = Address(ATTACKER)
+    MSG.origin_address = Address(ATTACKER)
+    with pytest.raises(UserError, match='validator rejected mutation'):
+        one.adjudicate_attempt(1)
+    assert json.loads(one.get_attempt(1))['status'] == 'PENDING'
+    assert one.get_credit(CLAIMANT) == '0'
+
+def test_reason_is_not_a_consensus_settlement_dimension(one, monkeypatch):
+    _prepared(one)
+    def agree_with_different_prose(leader, validator):
+        candidate = leader()
+        altered = dict(candidate)
+        altered['reason'] = 'Different explanation, same normalized decision.'
+        assert validator(V2MOD.gl.vm.Return(altered))
+        return candidate
+    monkeypatch.setattr(V2MOD.gl.vm, 'run_nondet_unsafe', agree_with_different_prose)
+    MSG.sender_address = Address(ATTACKER)
+    MSG.origin_address = Address(ATTACKER)
+    assert one.adjudicate_attempt(1) == 'CONTRADICTED'
+
+def test_unauthorized_caller_and_bad_bond_are_rejected(one):
+    one.funding_enabled = True
+    MSG.value = 10**18
+    MSG.sender_address = Address(ATTACKER)
+    MSG.origin_address = Address(SPONSOR)
+    with pytest.raises(UserError, match='direct EOA'):
+        one.create_case('Frozen source claim', 'demo', 'repo', 'a'*40,
+                        'docs/claim.md', 'src/code.py',
+                        'Our code always caps total fees at 2 percent.',
+                        '0'*64, '1'*64, 72)
+    MSG.sender_address = Address(SPONSOR)
+    MSG.origin_address = Address(SPONSOR)
+    one.create_case('Frozen source claim', 'demo', 'repo', 'a'*40,
+                    'docs/claim.md', 'src/code.py',
+                    'Our code always caps total fees at 2 percent.',
+                    '0'*64, '1'*64, 72)
+    MSG.sender_address = Address(CLAIMANT)
+    MSG.origin_address = Address(CLAIMANT)
+    MSG.value = 0
+    with pytest.raises(UserError, match='commitment must be sha256'):
+        one.commit_attempt(1, 'g'*64)
+    with pytest.raises(UserError, match='bond must equal'):
+        one.commit_attempt(1, 'a'*64)
+
+def test_invalid_immutable_locator_and_digest_are_rejected(one):
+    one.funding_enabled = True
+    MSG.sender_address = Address(SPONSOR)
+    MSG.origin_address = Address(SPONSOR)
+    MSG.value = 10**18
+    with pytest.raises(UserError, match='SHA-256 digests'):
+        one.create_case('Frozen source claim', 'demo', 'repo', 'a'*40,
+                        'docs/claim.md', 'src/code.py',
+                        'Our code always caps total fees at 2 percent.',
+                        'Z'*64, '1'*64, 72)
+    with pytest.raises(UserError, match='invalid source path'):
+        one.create_case('Frozen source claim', 'demo', 'repo', 'a'*40,
+                        '../docs/claim.md', 'src/code.py',
+                        'Our code always caps total fees at 2 percent.',
+                        '0'*64, '1'*64, 72)
+    with pytest.raises(UserError, match='full lowercase Git commit'):
+        one.create_case('Frozen source claim', 'demo', 'repo', 'A'*40,
+                        'docs/claim.md', 'src/code.py',
+                        'Our code always caps total fees at 2 percent.',
+                        '0'*64, '1'*64, 72)
+
+def test_unavailable_source_is_inconclusive_and_only_refunds_bond(one):
+    _prepared(one)
+    NETWORK.clear()
+    MSG.sender_address = Address(ATTACKER)
+    MSG.origin_address = Address(ATTACKER)
+    assert one.adjudicate_attempt(1) == 'INCONCLUSIVE'
+    assert one.get_credit(CLAIMANT) == str(5 * 10**16)
+    assert one.get_credit(SPONSOR) == '0'
+    attempt = json.loads(one.get_attempt(1))
+    assert attempt['status'] == 'SETTLED'
+    assert attempt['evidence_digest'] == ''
+    assert json.loads(one.get_case(1))['status'] == 'OPEN'
+
+def test_reveal_and_unrevealed_deadline_boundaries_are_strict(one, monkeypatch):
+    one.funding_enabled = True
+    MSG.value = 10**18
+    one.create_case('Frozen source claim', 'demo', 'repo', 'a'*40,
+                    'docs/claim.md', 'src/code.py',
+                    'Our code always caps total fees at 2 percent.',
+                    '0'*64, '1'*64, 72)
+    MSG.sender_address = Address(CLAIMANT)
+    MSG.origin_address = Address(CLAIMANT)
+    MSG.value = 5*10**16
+    one.commit_attempt(1, 'a'*64)
+    MSG.value = 0
+    monkeypatch.setattr(V2MOD, '_now', lambda: 100000 + 7200)
+    with pytest.raises(UserError, match='not an expired commitment'):
+        one.settle_unrevealed(1)
+    monkeypatch.setattr(V2MOD, '_now', lambda: 100000 + 7201)
+    one.settle_unrevealed(1)
+    assert json.loads(one.get_attempt(1))['status'] == 'FORFEITED'
+
+def test_recovery_boundary_is_strict(one, monkeypatch):
+    _prepared(one)
+    monkeypatch.setattr(V2MOD, '_now', lambda: 100000 + 604800)
+    with pytest.raises(UserError, match='7-day recovery period not elapsed'):
+        one.recover_pending(1)
+    monkeypatch.setattr(V2MOD, '_now', lambda: 100000 + 604801)
+    one.recover_pending(1)
+    assert json.loads(one.get_attempt(1))['status'] == 'RECOVERED'
+
+def test_maximum_bounty_and_bond_accounting_stays_exact(one):
+    one.funding_enabled = True
+    bounty = 10**24
+    bond = bounty // 20
+    MSG.sender_address = Address(SPONSOR)
+    MSG.origin_address = Address(SPONSOR)
+    MSG.value = bounty
+    one.create_case('Frozen source claim', 'demo', 'repo', 'a'*40,
+                    'docs/claim.md', 'src/code.py',
+                    'Our code always caps total fees at 2 percent.',
+                    '0'*64, '1'*64, 72)
+    MSG.sender_address = Address(CLAIMANT)
+    MSG.origin_address = Address(CLAIMANT)
+    MSG.value = bond
+    one.commit_attempt(1, 'a'*64)
+    treasury = json.loads(one.get_treasury_status())
+    assert treasury['accepted_wei'] == str(bounty + bond)
+    assert treasury['outstanding_wei'] == str(bounty + bond)
 
 def test_commit_requires_studionet(one):
     _prepared(one)

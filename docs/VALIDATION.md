@@ -5,8 +5,9 @@ This document is a test specification and evidence ledger, **not** an economic-s
 ## Current local evidence
 
 - Exact Python environment: Python 3.12, `genlayer-py 0.18.0`, `genlayer-test 0.29.2`, `genvm-linter 0.11.0`.
-- `pytest -q tests/unit`: 92 passed, including malformed-model, prompt-injection,
-  validator-disagreement and conservation coverage for the active V2 contract.
+- `pytest -q tests/unit`: 104 passed, including malformed-model, prompt-injection,
+  targeted verdict-field mutations, validator-disagreement, boundary, unavailable-source
+  and conservation coverage for the active V2 contract.
 - `pytest -q tests/direct`: 16 passed in genuine Direct Mode, including the
   safe starting-state and fail-closed withdrawal checks.
 - `npm run lint:contracts`: the active `ReceiptV2.py` passes all 3 lint and

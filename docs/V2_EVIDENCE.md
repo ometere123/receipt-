@@ -30,7 +30,8 @@ Recorded 2026-10-12 from the tested and deployed code snapshot `7e9942fd182a57c1
 
 ## Automated evidence
 
-- ReceiptV2 unit tests: `92 passed`.
+- ReceiptV2 unit tests: `104 passed`, including targeted verdict-field mutations,
+  malformed-input, timing-boundary, unavailable-source and exact-accounting cases.
 - GenVM Direct Mode tests: `16 passed`.
 - ReceiptV2 linter and semantic validation: `3 checks passed`.
 - RPC preflight: exact 61999 passed.

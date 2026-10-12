@@ -47,6 +47,12 @@ A receipt observer in an off-chain client does not authorize an on-chain monetar
 
 Do NOT claim that VeilPact/ShipBond resolve this risk. Do NOT enable V2 funding or withdrawal based only on normal-path success. If strict no-second-contract architecture is retained, either independently establish a *supported, verifiable on-chain external-payment outcome channel* on Studionet 61999 or candidly ship a non-custodial documentation-verdict protocol without automated custody payouts. If an EVM payment rail or receiver contract becomes necessary, that must be explicitly reviewed as a second on-chain component rather than concealed inside the "one contract" claim.
 
+### StudioNet-specific blocker and smallest supported alternative
+
+The official Studio limitations state that native transfers are simulated in Studio's local database, ghost contracts are not fully implemented, and EVM contract interaction beyond value transfers to EOAs is not implemented. External EVM messages also execute only after finalization and do not return a synchronous receipt to the parent contract. See [Studio limitations](https://docs.genlayer.com/developers/intelligent-contracts/tools/genlayer-studio/limitations), [value transfers](https://docs.genlayer.com/developers/intelligent-contracts/features/value-transfers), [messages](https://docs.genlayer.com/developers/intelligent-contracts/features/messages), and [finality](https://docs.genlayer.com/understand-genlayer-protocol/core-concepts/optimistic-democracy/finality).
+
+That means no one-IC V2 implementation can honestly establish an authenticated per-recipient success, failure, or ambiguous outcome for an external GEN dispatch on this network today. The smallest supported alternative is the current non-custodial V2 verdict/entitlement protocol: adjudicate and record the result, keep custody disabled, and have users settle ordinary GEN transfers outside V2 after finalized evidence. Restoring automated custody requires a separately reviewed conventional EVM escrow/adapter or other protocol-verifiable authorization and finality channel; it must be treated as a second on-chain component and must not be hidden inside the "one contract" claim.
+
 ## Release criteria
 
 - CI, exact 61999 CLI/GenVM lint, adversarial Direct Mode, current source hash and deployment parity.
