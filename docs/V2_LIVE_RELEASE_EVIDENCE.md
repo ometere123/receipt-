@@ -96,8 +96,10 @@ adjudications.
 - `npm run preflight`: PASS for chain 61999 and the pinned RPC.
 - `npm run source:verify`: PASS, exact bytes.
 - `npm run reconcile:v2`: PASS, read-only `DISPATCH_READY`, no writes.
-- GitHub Actions exact final-commit result and production URL are added here
-  after the final documentation commit and Vercel deployment.
+- GitHub Actions [run 38218477953](https://github.com/ometere123/receipt-/actions/runs/38218477953) passed all contract-unit, frontend, browser and genuine GenVM Direct Mode jobs for commit `b7c5a0f0941b9bea71aeb89fefc68685231c6b58`.
+- Production URL: [receipt-five-cyan.vercel.app](https://receipt-five-cyan.vercel.app), deployment `dpl_5PewXPtHA8t6vvGD8QSAtgh77UFs`.
+- `/api/build-info` returned HTTP 200 with `chain_id=61999`, `source_commit=b7c5a0f0941b9bea71aeb89fefc68685231c6b58`, `deployment_id=dpl_5PewXPtHA8t6vvGD8QSAtgh77UFs` and the final V2 address.
+- The production browser rendered the funded navigation and live cases. The test browser emitted only unrelated wallet-extension injection conflicts; no application console error was observed.
 
 The Vercel project is `delealufejoel-4184s-projects/receipt`, rooted at
 `frontend`. Its public V2 address, funding flag and StudioNet explorer URL are

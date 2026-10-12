@@ -28,7 +28,7 @@ The previous fail-closed deployment at `0xa61EC599648782b2286eccd7e6e66971314D83
 - Playwright browser suite: `12 passed`, including accessibility and explicit configuration/wallet/history behavior.
 - Withdrawal reconciliation fixtures: `5 passed`; read-only and no writes.
 - Dependency audit: root and frontend `npm audit --omit=dev --audit-level=high` both reported `0 vulnerabilities`.
-- The final exact-commit GitHub Actions run is recorded in `docs/V2_LIVE_RELEASE_EVIDENCE.md` after the release evidence commit.
+- [GitHub Actions run 38218477953](https://github.com/ometere123/receipt-/actions/runs/38218477953): PASS for exact commit `b7c5a0f0941b9bea71aeb89fefc68685231c6b58` across contract-unit, frontend, browser and genuine GenVM Direct Mode jobs.
 
 ## Frontend configuration
 
