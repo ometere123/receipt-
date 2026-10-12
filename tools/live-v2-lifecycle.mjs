@@ -37,6 +37,7 @@ const NEGATIVE_ANCHOR = 'class ReceiptV2(gl.Contract):';
 const WRONG_SOURCE_DIGEST = '0'.repeat(64);
 const PRIOR_SPEND = BigInt(process.env.RECEIPT_V2_ALREADY_SPENT_WEI || '0');
 const EXPECTED_EXISTING_ACCEPTED = BigInt(process.env.RECEIPT_V2_EXPECTED_EXISTING_ACCEPTED_WEI || '0');
+const EXPECTED_EXISTING_CREDITED = BigInt(process.env.RECEIPT_V2_EXPECTED_EXISTING_CREDITED_WEI || '0');
 
 let valueSpent = PRIOR_SPEND;
 mkdirSync('artifacts', { recursive: true });
@@ -51,6 +52,7 @@ const evidence = {
   approved_max_spend_gen: '45',
   prior_value_spent_wei: PRIOR_SPEND.toString(),
   expected_existing_accepted_wei: EXPECTED_EXISTING_ACCEPTED.toString(),
+  expected_existing_credited_wei: EXPECTED_EXISTING_CREDITED.toString(),
   bounty_wei: BOUNTY.toString(),
   bond_wei: BOND.toString(),
   cases: [],
@@ -251,11 +253,10 @@ async function main() {
     throw new Error(`Unexpected deployed config: ${JSON.stringify(config)}`);
   }
   if (BigInt(initialTreasury.accepted_wei) !== 0n || BigInt(initialTreasury.outstanding_wei) !== 0n) {
-    const expectedCredit = BOND;
     const knownExistingCase = EXPECTED_EXISTING_ACCEPTED > 0n &&
       BigInt(initialTreasury.accepted_wei) === EXPECTED_EXISTING_ACCEPTED &&
       BigInt(initialTreasury.outstanding_wei) === EXPECTED_EXISTING_ACCEPTED &&
-      BigInt(initialTreasury.credited_wei) === expectedCredit &&
+      BigInt(initialTreasury.credited_wei) === EXPECTED_EXISTING_CREDITED &&
       BigInt(initialTreasury.external_dispatch_wei) === 0n &&
       Number(initialTreasury.dispatch_count) === 0;
     if (!knownExistingCase) throw new Error(`Deployment treasury is not zero: ${JSON.stringify(initialTreasury)}`);
