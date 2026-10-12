@@ -59,8 +59,8 @@ tests, including zero WCAG 2A/2AA violations on each primary view. This keeps
 the contrast fixes regression-tested without depending on live chain data.
 
 The current production frontend candidate was deployed from commit
-`caa141d7d465ca16ec44b9532e37a93100a8bdad` as Vercel deployment
-`dpl_8TLU8GfpaarwFQNjNdQ5Uk3pKmrH`, aliased to
+`e8e3d3a7452d871bb88581aa5e21de23af66a3ef` as Vercel deployment
+`dpl_8jTUN9JuDVtciUezDSmTgo7Vw9tD`, aliased to
 `https://receipt-five-cyan.vercel.app`. A protected `vercel curl` request to
 `/api/build-info` returned the same commit and deployment ID, chain `61999`,
 PromiseVault `0x6A5366Dcc45E6fb137534BA09f44632593c18880`, and ProofEngine
