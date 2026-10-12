@@ -98,6 +98,7 @@ The authoritative reviewer material is in:
 - [`docs/V2_SINGLE_CONTRACT.md`](docs/V2_SINGLE_CONTRACT.md) — architecture and release gate.
 - [`docs/V2_PAYOUT_PATTERNS.md`](docs/V2_PAYOUT_PATTERNS.md) — source-backed protocol boundary research.
 - [`docs/V2_REVIEW.md`](docs/V2_REVIEW.md) — threat model, method/state references, audit matrix and evidence ledger.
+- [`docs/V2_EVIDENCE.md`](docs/V2_EVIDENCE.md) — deployed address, source hash, preview and automated evidence snapshot.
 - [`docs/PROTOCOL.md`](docs/PROTOCOL.md) and [`docs/LIVE_VALIDATION.md`](docs/LIVE_VALIDATION.md) — V1 historical protocol/evidence, not V2 certification.
 
 No 5/5/5/5 score, custody safety, production cutover or successful V2 payout is claimed until the missing live proof exists. A source digest proves exact bytes, not authorship, deployment authenticity or whole-system behavior.
