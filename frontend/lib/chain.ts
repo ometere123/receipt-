@@ -2,7 +2,7 @@
 import { createClient } from 'genlayer-js';
 import { studionet } from 'genlayer-js/chains';
 import { TransactionHashVariant, TransactionStatus } from 'genlayer-js/types';
-import { CHAIN_ID, RECEIPT_V2, isAddress, hasDeployment, type ReceiptCase, type ReceiptAttempt } from './domain';
+import { CHAIN_ID, HISTORICAL_VAULT, RECEIPT_V2, isAddress, hasDeployment, hasHistoricalDeployment, type ReceiptCase, type ReceiptAttempt } from './domain';
 
 export interface InjectedProvider {
   request(args: { method: string; params?: unknown[] | object }): Promise<unknown>;
@@ -18,6 +18,10 @@ export async function read(method: string, args: unknown[] = [], address: `0x${s
   assertDeployed();
   return publicClient.readContract({ address, functionName: method, args: args as [], transactionHashVariant: TransactionHashVariant.LATEST_FINAL });
 }
+export async function historicalRead(method: string, args: unknown[] = []) {
+  if (!hasHistoricalDeployment()) throw new Error('Historical V1 addresses are not configured.');
+  return publicClient.readContract({ address: HISTORICAL_VAULT, functionName: method, args: args as [], transactionHashVariant: TransactionHashVariant.LATEST_FINAL });
+}
 function parseJSON<T>(response: unknown): T {
   if (typeof response === 'string') return JSON.parse(response) as T;
   if (typeof response === 'object' && response !== null) return response as T;
@@ -26,6 +30,10 @@ function parseJSON<T>(response: unknown): T {
 export async function caseCounts() { return parseJSON<{ cases: number; attempts: number }>(await read('get_counts')); }
 export async function vaultConfig() { return parseJSON<{ architecture?: string; funding_enabled?: boolean; funding_mode?: string; withdrawal_status?: string }>(await read('get_config')); }
 export async function treasuryStatus() { return parseJSON<TreasuryStatus>(await read('get_treasury_status')); }
+export async function historicalConfig() { return parseJSON<{ chain?: number; funding_enabled?: boolean; withdrawal_status?: string }>(await historicalRead('get_config')); }
+export async function historicalCounts() { return parseJSON<{ cases: number; attempts: number }>(await historicalRead('get_counts')); }
+export async function historicalTreasuryStatus() { return parseJSON<{ outstanding_wei: string; external_dispatch_wei: string; dispatch_count: number; ghost_balance_wei: string }>(await historicalRead('get_treasury_status')); }
+export async function historicalCreditOf(addr: string) { return BigInt(String(await historicalRead('get_credit', [addr]))); }
 export async function casesPage(offset = 0, limit = 24) { return parseJSON<ReceiptCase[]>(await read('list_cases', [offset, limit])); }
 export async function caseById(id: number) { const r = await read('get_case', [id]); return r ? parseJSON<ReceiptCase>(r) : null; }
 export async function attemptById(id: number) { const r = await read('get_attempt', [id]); return r ? parseJSON<ReceiptAttempt>(r) : null; }

@@ -562,6 +562,11 @@ contradiction (bool), reason (plain string <= 500 chars).\n\n''' + json.dumps({
             return all(independent.get(k) == proposed.get(k) for k in keys)
 
         result = gl.vm.run_nondet_unsafe(evaluate, validate)
+        if not isinstance(result, dict):
+            # A consensus/runtime failure must leave the attempt pending so
+            # the permissionless recovery window remains available. Never
+            # interpret an unknown return shape as a settlement.
+            _fail('invalid consensus result')
         # This is a settlement-level invariant, not merely a model convention.
         # A neutral result can refund only the bond; it must never carry a
         # digest that PromiseVault could interpret as settled evidence.
@@ -574,6 +579,9 @@ contradiction (bool), reason (plain string <= 500 chars).\n\n''' + json.dumps({
                 _fail('missing evidence fingerprint')
         record = {'case_id': case_id, 'attempt_id': attempt_id,
                   'verdict': result['verdict'], 'digest': result['digest'],
+                  'scope_ok': result['scope_ok'],
+                  'proof_complete': result['proof_complete'],
+                  'contradiction': result['contradiction'],
                   'reason': _clean_reason(result['reason'])}
         self._apply_result(case_id, attempt_id, record['verdict'],
                            record['digest'], record['reason'])

@@ -42,6 +42,20 @@ test('receipt wall does not invent confirmations', async ({page}) => {
   await expect(page.getByText(/Waiting for the first verified receipt/i)).toBeVisible();
 });
 
+test('historical V1 viewer is explicit and read-only', async ({page}) => {
+  await page.goto('/');
+  await page.locator('.desktop-nav').getByRole('button', {name:'V1 history'}).click();
+  const configured = page.getByText(/Read-only history/i);
+  const unconfigured = page.getByText(/Historical V1 viewer is not configured/i);
+  expect(await configured.count() + await unconfigured.count()).toBeGreaterThan(0);
+  if (await configured.count()) {
+    await expect(configured).toBeVisible();
+    await expect(page.getByText(/V1 credits remain at the historical PromiseVault/i)).toBeVisible();
+  } else {
+    await expect(unconfigured).toBeVisible();
+  }
+});
+
 test('about page disclaims universal audit guarantees', async ({page}) => {
   await page.goto('/');
   await page.locator('.desktop-nav').getByRole('button',{name:'How it works'}).click();

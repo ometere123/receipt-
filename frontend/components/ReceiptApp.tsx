@@ -11,16 +11,17 @@ import {
 import {
   addrShort, bondFor, CaseDraft, CHAIN_ID, commitHash, EXPLORER,
   FUNDING_ENABLED,
-  genToWei, hasDeployment, loadEvidence, ReceiptAttempt, ReceiptCase,
+  genToWei, hasDeployment, hasHistoricalDeployment, HISTORICAL_ENGINE,
+  HISTORICAL_VAULT, loadEvidence, ReceiptAttempt, ReceiptCase,
   relativeDate, statusLabel, validateDraft, VAULT, weiToGen,
 } from '@/lib/domain';
 import {
-  attemptById, attemptsPage, caseById, caseCounts, casesPage, creditOf, vaultConfig,
-  injected, walletAddress, write,
+  attemptById, attemptsPage, caseById, caseCounts, casesPage, creditOf, historicalConfig,
+  historicalCounts, historicalCreditOf, historicalTreasuryStatus, injected, vaultConfig, walletAddress, write,
 } from '@/lib/chain';
 import { dropReveal, getReveals, saveReveal } from '@/lib/local';
 
-type Tab = 'explore' | 'create' | 'desk' | 'wall' | 'about';
+type Tab = 'explore' | 'create' | 'desk' | 'wall' | 'history' | 'about';
 interface TxEntry { id: string; label: string; state: string; hash?: string; at: number; }
 const EMPTY_DRAFT: CaseDraft = { title: '', owner: '', repo: '', commit: '', doc_path: '', source_path: '', claim: '', duration_hours: 72, bounty: '1' };
 const fmt = (n: string | number) => weiToGen(n);
@@ -179,7 +180,7 @@ export default function ReceiptApp() {
     url.searchParams.delete('case');
     window.history.replaceState({}, '', url.pathname + url.search);
   }, []);
-  const nav: { id: Tab; label: string }[] = [{id:'explore',label:'Explore cases'},{id:'create',label:fundingEnabled ? 'Fund a claim' : 'Funding gate'},{id:'desk',label:'My desk'},{id:'wall',label:'Receipt wall'},{id:'about',label:'How it works'}];
+  const nav: { id: Tab; label: string }[] = [{id:'explore',label:'Explore cases'},{id:'create',label:fundingEnabled ? 'Fund a claim' : 'Funding gate'},{id:'desk',label:'My desk'},{id:'wall',label:'Receipt wall'},{id:'history',label:'V1 history'},{id:'about',label:'How it works'}];
   return <>
     <div className="site-shell">
       <div className="marquee"><span><Sparkles size={14}/> CODE TALKS. RECEIPTS PROVE. <span className="ticker-star">✳</span> NO MYSTERY VERDICTS. <span className="ticker-star">✳</span> INDEPENDENT GENLAYER CONSENSUS. <Sparkles size={14}/></span></div>
@@ -209,6 +210,7 @@ export default function ReceiptApp() {
         {tab === 'create' && <CreateView account={account} canWrite={hasDeployment() && networkReady} fundingEnabled={fundingEnabled} connect={connect} runTx={runTx} refresh={loadAll} openExplore={()=>setTab('explore')}/>}
         {tab === 'desk' && <DeskView account={account} canWrite={hasDeployment() && networkReady} attempts={attempts} cases={cases} credit={credit} connect={connect} runTx={runTx} refresh={loadAll} loadOlder={loadOlder} hasOlder={cases.length < count.cases || attempts.length < count.attempts} select={setSelected}/>}
         {tab === 'wall' && <section className="content-section"><div className="section-head"><div><span className="eyebrow">PUBLICLY VERIFIABLE OUTCOMES</span><h2>The receipt <span className="scribble">wall.</span></h2><p>No popularity scores or unverified badges. Only genuine settlement results.</p></div><div className="floating-icon"><BadgeCheck size={33}/></div></div>{won.length ? <div className="case-grid">{won.map((c,i)=><div className={`case-hue hue-${i%4}`} key={c.id}><CaseCard c={c} now={now} onSelect={()=>setSelected(c)}/></div>)}</div> : <div className="empty-state"><BadgeCheck size={50}/><h3>Waiting for the first verified receipt.</h3><p>The wall fills only after a challenge is finalized as CONTRADICTED.</p></div>}</section>}
+        {tab === 'history' && <HistoricalView account={account} connect={connect}/>}
         {tab === 'about' && <AboutView fundingEnabled={fundingEnabled} openCreate={()=>setTab('create')} />}
       </main>
       <footer className="footer"><div className="container footer-inside"><div className="footer-logo">receipt<span>!</span><small>BIG PROMISES. REAL PROOF.</small></div><p>A claim-specific, source-grounded GenLayer experiment. No security certification implied.</p><div className="footer-links"><a href="https://docs.genlayer.com" target="_blank" rel="noreferrer">GenLayer docs <ArrowUpRight size={14}/></a><span>Studionet · 61999</span></div></div></footer>
@@ -308,6 +310,37 @@ function CaseDetail({c,now,account,canWrite,fundingEnabled,connect,runTx,refresh
     {error&&<div className="form-error" role="alert"><CircleAlert size={17}/>{error}</div>}
     <div className="detail-links"><a href={`https://github.com/${live.owner}/${live.repo}/tree/${live.commit}`} target="_blank" rel="noreferrer"><Github size={16}/> Pinned Git snapshot <ArrowUpRight size={15}/></a><button onClick={()=>navigator.clipboard.writeText(`${window.location.origin}/?case=${live.id}`)}><Copy size={15}/> Copy case link</button><button onClick={()=>void sync()}><RefreshCcw size={15}/>Refresh status</button></div>
   </div></Modal>;
+}
+
+function HistoricalView({account,connect}:{account:string;connect:()=>void}) {
+  const [summary,setSummary] = useState<{cases:number;attempts:number;outstanding:string;dispatches:number;funding:boolean}|null>(null);
+  const [credit,setCredit] = useState<bigint|null>(null);
+  const [loading,setLoading] = useState(false);
+  const [error,setError] = useState('');
+  useEffect(() => {
+    if (!hasHistoricalDeployment()) return;
+    let cancelled = false;
+    setLoading(true);
+    Promise.all([historicalConfig(), historicalCounts(), historicalTreasuryStatus()]).then(([config,counts,treasury]) => {
+      if (!cancelled) setSummary({cases:counts.cases, attempts:counts.attempts, outstanding:treasury.outstanding_wei, dispatches:treasury.dispatch_count, funding:config.funding_enabled === true});
+    }).catch(e => { if (!cancelled) setError((e as Error).message); }).finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+  useEffect(() => {
+    if (!account || !hasHistoricalDeployment()) { setCredit(null); return; }
+    let cancelled = false;
+    historicalCreditOf(account).then(value => { if (!cancelled) setCredit(value); }).catch(e => { if (!cancelled) setError((e as Error).message); });
+    return () => { cancelled = true; };
+  }, [account]);
+  return <section className="content-section"><div className="section-head"><div><span className="eyebrow">ARCHIVED V1 RECORDS</span><h2>History stays <span className="scribble">honest.</span></h2><p>Read-only access to the original two-contract deployment. V1 cases and credits were not migrated into V2.</p></div><div className="floating-icon"><History size={32}/></div></div>
+    {!hasHistoricalDeployment() ? <div className="notice notice-warn"><CircleAlert size={19}/><span><strong>Historical V1 viewer is not configured.</strong> Supply both historical contract addresses to inspect the old records.</span></div> : <>
+      {error && <div className="notice notice-error"><CircleAlert size={18}/><span>{error}</span></div>}
+      <div className="notice notice-warn"><ShieldCheck size={19}/><span><strong>Read-only history.</strong> This page exposes no V1 write or withdrawal controls. V1 credits remain at the historical PromiseVault and are never represented as V2 balances.</span></div>
+      {loading ? <div className="empty-state"><RefreshCcw className="spin" size={31}/><h3>Reading finalized V1 state…</h3></div> : summary && <div className="desk-two"><div className="desk-list"><h3>Historical registry</h3><div className="detail-meta"><span>{summary.cases} cases</span><span>{summary.attempts} attempts</span><span>{summary.funding ? 'funding was enabled' : 'funding disabled'}</span></div><p className="help-text">These records belong to the historical PromiseVault. They are not proof that V2 can safely move funds.</p></div><div className="desk-list"><h3>Historical treasury</h3><p><strong>{fmt(summary.outstanding)} GEN</strong> recorded as outstanding in V1.</p><p className="help-text">Observed V1 dispatch records: {summary.dispatches}. A dispatch record is not treated as an authenticated external receipt.</p></div></div>}
+      <div className="desk-list" style={{marginTop: '22px'}}><h3>Your historical credit</h3>{account ? <p><strong>{credit === null ? 'Reading…' : `${fmt(credit.toString())} GEN`}</strong><br/><span className="help-text">Queried from the historical PromiseVault for {addrShort(account)}. This value is separate from the active V2 credit.</span></p> : <><p className="help-text">Connect a wallet to read its historical PromiseVault credit. Connecting does not authorize any V1 write.</p><button className="btn btn-outline btn-small" onClick={connect}><Wallet size={16}/>Connect wallet to inspect credit</button></>}</div>
+      <div className="detail-links"><a href={`${EXPLORER}/address/${HISTORICAL_VAULT}`} target="_blank" rel="noreferrer">Historical PromiseVault {addrShort(HISTORICAL_VAULT)} <ExternalLink size={13}/></a><a href={`${EXPLORER}/address/${HISTORICAL_ENGINE}`} target="_blank" rel="noreferrer">Historical ProofEngine {addrShort(HISTORICAL_ENGINE)} <ExternalLink size={13}/></a></div>
+    </>}
+  </section>;
 }
 
 function DeskView({account,canWrite,attempts,cases,credit,connect,runTx,refresh,loadOlder,hasOlder,select}: {account:string;canWrite:boolean;attempts:ReceiptAttempt[];cases:ReceiptCase[];credit:bigint;connect:()=>void;runTx:(label:string,fn:(u:(s:string,h?:string)=>void)=>Promise<string>)=>Promise<string>;refresh:()=>Promise<void>;loadOlder:()=>Promise<void>;hasOlder:boolean;select:(c:ReceiptCase)=>void}) {
