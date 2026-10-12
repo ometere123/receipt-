@@ -1,7 +1,7 @@
 # RECEIPT! V2 live release evidence
 
 Recorded 2026-10-12 on StudioNet 61999. This is factual transaction evidence,
-not a payout guarantee or a claimed review score.
+not a payout guarantee.
 
 ## Final deployment and parity
 

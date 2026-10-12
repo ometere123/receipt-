@@ -32,10 +32,11 @@ The previous fail-closed deployment at `0xa61EC599648782b2286eccd7e6e66971314D83
 
 ## Frontend configuration
 
-The Vercel project is `delealufejoel-4184s-projects/receipt`, rooted at `frontend`. The final deployment must set:
+The Vercel project is `delealufejoel-4184s-projects/receipt`, rooted at
+`frontend`. The final production configuration is:
 
 ```text
-NEXT_PUBLIC_RECEIPT_V2_ADDRESS=<approved-funded-v2-address>
+NEXT_PUBLIC_RECEIPT_V2_ADDRESS=0xc0C20aDd6E691a6695B4B93F0A044739A91cbC5F
 NEXT_PUBLIC_FUNDING_ENABLED=true
 NEXT_PUBLIC_EXPLORER_URL=https://explorer-studio.genlayer.com
 ```

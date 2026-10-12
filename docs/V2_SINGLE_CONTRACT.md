@@ -1,6 +1,14 @@
 # V2 single-contract safety review
 
-Status: **Funded implementation complete; final StudioNet deployment pending explicit signer/scope/spend approval.**
+Status: **Verified funded V2 release on StudioNet 61999.**
+
+The active deployment is `0xc0C20aDd6E691a6695B4B93F0A044739A91cbC5F`, deployed
+in transaction `0x9843c5912cf95c5fd292abf12915923004732ba3c2039eab67b1ec309105fae5`.
+The deployed source matches SHA-256
+`d57a19a19846f385c263deb04d7216d3a378ee2b4a153220e0710c85f0777cc0` exactly.
+Finalized sponsor/challenger lifecycle, positive/negative/neutral outcomes,
+withdrawal evidence and conservation readback are recorded in
+[`V2_LIVE_RELEASE_EVIDENCE.md`](V2_LIVE_RELEASE_EVIDENCE.md).
 
 ## Scope
 
@@ -57,14 +65,12 @@ The dispatch record is `EMITTED_UNCONFIRMED`: it proves the contract emitted the
 
 Native GEN funding and the ordinary recipient withdrawal path are part of V2. The parent Intelligent Contract transaction and the external EVM child are separate observable records. V2 therefore exposes the dispatch status honestly and leaves child receipt observation to deployment/reconciliation evidence; it does not infer child success, issue an automatic retry, or perform an untrusted re-credit.
 
-## Release gates
+## Verified release evidence
 
-Required before changing the status to READY:
-
-1. Exact source parity against a finalized 61999 ReceiptV2 deployment.
-2. Direct Mode and adversarial unit coverage for all transitions, malformed model results, digest drift, wrong caller/chain, duplicate/race attempts and conservation.
-3. Finalized StudioNet lifecycle: sponsor, challenge, positive adjudication, recipient dispatch, external child evidence, and conservation readback.
-4. Negative/neutral cases: malformed or unavailable source, `NOT_ESTABLISHED`, malicious leader, duplicate/unauthorized actions, timeout recovery, wrong wallet/network.
-5. V2 frontend verification with one address, native withdrawal status and historical V1 read-only access; only then update production env/aliases.
-
-Until then, scores must remain `NOT_READY`; green local tests do not upgrade the payout boundary.
+The release gates are satisfied by exact source parity, green unit/Direct Mode,
+frontend and browser checks, the finalized StudioNet lifecycle, positive,
+negative and neutral adjudication cases, protected-action rejection evidence,
+recipient-restricted withdrawal evidence, conservation readback, and production
+frontend verification. The external child remains a separately observed
+boundary: V2 records `EMITTED_UNCONFIRMED` and does not infer child success or
+perform automatic retry or re-credit.

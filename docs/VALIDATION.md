@@ -1,6 +1,6 @@
 # Validation and proof-of-operation requirements
 
-This document is a test specification and evidence ledger, **not** an economic-safety certification. The final funded source is locally validated; final StudioNet deployment and lifecycle evidence remain pending explicit signer/scope/spend approval. Do not invent or backfill transactions.
+This document is a test specification and evidence ledger, **not** an economic-safety certification. The final funded source, finalized StudioNet deployment and live lifecycle evidence are recorded in [`V2_EVIDENCE.md`](V2_EVIDENCE.md) and [`V2_LIVE_RELEASE_EVIDENCE.md`](V2_LIVE_RELEASE_EVIDENCE.md). Do not invent or backfill transactions.
 
 ## Current local evidence
 
@@ -17,9 +17,9 @@ This document is a test specification and evidence ledger, **not** an economic-s
   The desk exposes claimable GEN, recipient withdrawal and dispatch status;
   the historical V1 viewer remains read-only.
 - `npm run test:reconciliation`: 5 deterministic read-only payout-reconciliation fixtures pass, covering a successful receipt with `NO_MAJORITY`, a failed receipt, conflicting evidence, a missing child, and duplicate/idempotent observations. `npm run reconcile:withdrawal` performs the same collection against the pinned Studionet RPC without writes, retries or recredits.
-- The previous fail-closed V2 deployment is superseded by this funded source;
-  no final funded address or deployment transaction is claimed yet.
-  Historical V1 lifecycle and payout evidence remains in
+- The previous fail-closed V2 deployment is superseded by the verified funded
+  deployment recorded in [`V2_EVIDENCE.md`](V2_EVIDENCE.md). Historical V1
+  lifecycle and payout evidence remains in
   [`LIVE_VALIDATION.md`](LIVE_VALIDATION.md) and is not V2 proof.
 - Case 3's assessment child is materially `CANCELED` with `NO_MAJORITY`, zero
   committed/revealed votes, no appeal bond, and no credited value. The current
@@ -70,7 +70,8 @@ node --check tools/deploy-studionet.mjs
 | Browser refresh | committed data and pending tx recover; no duplicate write | screen recording + tx IDs |
 | Responsive and a11y | phone, desktop, contrast, keyboard dialog, reduced motion | manual UI checklist |
 
-The external child receipt remains a separately evidenced boundary. No independent score or mainnet guarantee is implied by passing the local tests.
+The external child receipt remains a separately evidenced boundary. Passing the
+local tests does not imply a mainnet guarantee.
 
 ## Adversarial source cases
 

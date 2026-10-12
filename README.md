@@ -8,7 +8,7 @@ The final funded implementation is on branch `v2-final-funded`. `ReceiptV2.py` i
 
 The final funded deployment is `0xc0C20aDd6E691a6695B4B93F0A044739A91cbC5F`, deployed by `0x0d5540e0aD4B92Aa0ad4e5F1b8cD645ee1E363E7` in transaction `0x9843c5912cf95c5fd292abf12915923004732ba3c2039eab67b1ec309105fae5`. It finalized successfully on StudioNet 61999, and the deployed `contracts/ReceiptV2.py` bytes match SHA-256 `d57a19a19846f385c263deb04d7216d3a378ee2b4a153220e0710c85f0777cc0`. The previous fail-closed deployment is historical evidence only.
 
-The V1 `ProofEngine.py` and `PromiseVault.py` sources and their historical deployment evidence remain in the repository for read-only audit/history. V1 balances are not migrated into V2, and `main` is not changed by this branch.
+The V1 `ProofEngine.py` and `PromiseVault.py` sources and their historical deployment evidence remain in the repository for read-only audit/history. V1 balances are not migrated into V2. The verified funded release is merged into `main`.
 
 ## V2 architecture
 

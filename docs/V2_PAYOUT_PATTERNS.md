@@ -51,7 +51,7 @@ Do not treat this historical analysis as a substitute for the final lifecycle ev
 
 The official Studio limitations state that native transfers are simulated in Studio's local database, ghost contracts are not fully implemented, and EVM contract interaction beyond value transfers to EOAs is not implemented. External EVM messages also execute only after finalization and do not return a synchronous receipt to the parent contract. See [Studio limitations](https://docs.genlayer.com/developers/intelligent-contracts/tools/genlayer-studio/limitations), [value transfers](https://docs.genlayer.com/developers/intelligent-contracts/features/value-transfers), [messages](https://docs.genlayer.com/developers/intelligent-contracts/features/messages), and [finality](https://docs.genlayer.com/understand-genlayer-protocol/core-concepts/optimistic-democracy/finality).
 
-That means no one-IC V2 implementation can honestly establish an authenticated per-recipient success, failure, or ambiguous outcome for an external GEN dispatch on this network today. The smallest supported alternative is the current non-custodial V2 verdict/entitlement protocol: adjudicate and record the result, keep custody disabled, and have users settle ordinary GEN transfers outside V2 after finalized evidence. Restoring automated custody requires a separately reviewed conventional EVM escrow/adapter or other protocol-verifiable authorization and finality channel; it must be treated as a second on-chain component and must not be hidden inside the "one contract" claim.
+That means no one-IC V2 implementation can honestly establish an authenticated per-recipient success, failure, or ambiguous outcome for an external GEN dispatch on this network today. The verified V2 release therefore retains native GEN custody and recipient-only withdrawal dispatch, records the dispatch as `EMITTED_UNCONFIRMED`, and relies on independent off-chain child-receipt evidence without automatic retry or re-credit. Any stronger protocol-verifiable payment-finality or compensation channel would require a separately reviewed additional component and must not be hidden inside the "one contract" claim.
 
 ## Release criteria
 
@@ -61,4 +61,6 @@ That means no one-IC V2 implementation can honestly establish an authenticated p
 - V2 frontend addresses and build source fixed; historical V1 claims/credits always remain accessible, never silently assumed transferred.
 - No production release or GEN transactions without explicit human authorization.
 
-The final funded branch opens native GEN cases and exposes recipient-only withdrawal; the remaining release gate is controlled live deployment and lifecycle evidence.
+The final funded release opens native GEN cases and exposes recipient-only
+withdrawal. Its finalized deployment, lifecycle evidence and remaining platform
+limitation are recorded in [`V2_LIVE_RELEASE_EVIDENCE.md`](V2_LIVE_RELEASE_EVIDENCE.md).

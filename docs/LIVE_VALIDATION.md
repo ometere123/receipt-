@@ -75,7 +75,7 @@ receipt wall, and About. The deterministic local run passed all 11 browser
 tests, including zero WCAG 2A/2AA violations on each primary view. This keeps
 the contrast fixes regression-tested without depending on live chain data.
 
-The current production frontend candidate was deployed from commit
+The historical V1 production frontend candidate was deployed from commit
 `e8e3d3a7452d871bb88581aa5e21de23af66a3ef` as Vercel deployment
 `dpl_8jTUN9JuDVtciUezDSmTgo7Vw9tD`, aliased to
 `https://receipt-five-cyan.vercel.app`. A protected `vercel curl` request to
